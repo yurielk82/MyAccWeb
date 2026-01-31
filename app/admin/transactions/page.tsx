@@ -389,7 +389,9 @@ export default function AdminTransactionsPage() {
                             
                             <div className="flex justify-between font-semibold pt-1 border-t">
                               <span>잔액</span>
-                              <span>{formatCurrency(transaction.balance)}원</span>
+                              <span className={transaction.balance >= 0 ? "text-gray-900" : "text-red-600"}>
+                                {formatCurrency(transaction.balance)}원
+                              </span>
                             </div>
                           </div>
                         </div>

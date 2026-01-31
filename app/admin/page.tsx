@@ -80,11 +80,15 @@ export default function AdminDashboard() {
           <CardContent className="pt-6">
             <div className="space-y-2">
               <p className="text-sm text-gray-600">💰 현재 잔액</p>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className={`text-3xl font-bold ${
+                totalBalance >= 0 ? "text-gray-900" : "text-red-600"
+              }`}>
                 {formatCurrency(totalBalance)}원
               </p>
-              <p className="text-sm text-success">
-                ↑ {todayTotal >= 0 ? "+" : ""}{formatCurrency(todayTotal)} (오늘)
+              <p className={`text-sm ${
+                todayTotal >= 0 ? "text-success" : "text-danger"
+              }`}>
+                {todayTotal >= 0 ? "↑" : "↓"} {todayTotal >= 0 ? "+" : ""}{formatCurrency(todayTotal)} (오늘)
               </p>
             </div>
           </CardContent>

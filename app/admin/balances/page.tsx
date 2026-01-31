@@ -101,7 +101,11 @@ export default function ManagerBalancesPage() {
       {/* Main Content */}
       <main className="p-4 space-y-4">
         {/* 총 잔액 */}
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+        <Card className={`bg-gradient-to-br ${
+          totalBalance >= 0 
+            ? "from-blue-500 to-blue-600" 
+            : "from-red-500 to-red-600"
+        } text-white`}>
           <CardContent className="p-6">
             <p className="text-sm opacity-90">총 잔액</p>
             <p className="text-3xl font-bold mt-2">{formatCurrency(totalBalance)}원</p>

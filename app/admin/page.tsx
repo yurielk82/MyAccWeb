@@ -58,6 +58,26 @@ export default function AdminDashboard() {
     return sum;
   }, 0);
 
+  // 이번달 수수료 계산
+  const thisMonth = new Date().getMonth();
+  const thisYear = new Date().getFullYear();
+  const monthlyFee = transactions.reduce((sum, t) => {
+    const txDate = new Date(t.date);
+    if (txDate.getMonth() === thisMonth && txDate.getFullYear() === thisYear) {
+      return sum + (t.feeAmount || 0);
+    }
+    return sum;
+  }, 0);
+
+  // 올해 수수료 계산
+  const yearlyFee = transactions.reduce((sum, t) => {
+    const txDate = new Date(t.date);
+    if (txDate.getFullYear() === thisYear) {
+      return sum + (t.feeAmount || 0);
+    }
+    return sum;
+  }, 0);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -99,13 +119,17 @@ export default function AdminDashboard() {
           <Card>
             <CardContent className="pt-6 text-center">
               <p className="text-sm text-gray-600">이번달 수수료</p>
-              <p className="text-2xl font-bold text-gray-900">-</p>
+              <p className="text-2xl font-bold text-primary">
+                {formatCurrency(monthlyFee)}원
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6 text-center">
-              <p className="text-sm text-gray-600">연간 총액</p>
-              <p className="text-2xl font-bold text-gray-900">-</p>
+              <p className="text-sm text-gray-600">올해 수수료</p>
+              <p className="text-2xl font-bold text-primary">
+                {formatCurrency(yearlyFee)}원
+              </p>
             </CardContent>
           </Card>
         </div>

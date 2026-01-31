@@ -15,7 +15,9 @@ import type {
   ManagerReport,
 } from "@/lib/types";
 
-const API_URL = process.env.NEXT_PUBLIC_GAS_API_URL || "";
+// 프록시 API 사용 (CORS 우회)
+const USE_PROXY = true;
+const API_URL = USE_PROXY ? "/api/gas" : process.env.NEXT_PUBLIC_GAS_API_URL || "";
 
 // API 호출 헬퍼 함수
 async function fetchAPI<T>(

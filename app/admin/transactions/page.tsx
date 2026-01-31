@@ -20,8 +20,11 @@ export default function AdminTransactionsPage() {
   const { user } = useAuthStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
+  const [displayedTransactions, setDisplayedTransactions] = useState<Transaction[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 100;
 
   // 필터 상태
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,6 +41,13 @@ export default function AdminTransactionsPage() {
   useEffect(() => {
     applyFilters();
   }, [transactions, searchQuery, selectedManager, selectedType, startDate, endDate]);
+
+  useEffect(() => {
+    // 페이징 적용
+    const start = 0;
+    const end = page * itemsPerPage;
+    setDisplayedTransactions(filteredTransactions.slice(start, end));
+  }, [filteredTransactions, page]);
 
   const loadData = async () => {
     if (!user) return;
@@ -105,7 +115,14 @@ export default function AdminTransactionsPage() {
     setSelectedType("all");
     setStartDate("");
     setEndDate("");
+    setPage(1);
   };
+
+  const loadMore = () => {
+    setPage(prev => prev + 1);
+  };
+
+  const hasMore = filteredTransactions.length > displayedTransactions.length;
 
   const handleDelete = async (id: string) => {
     if (!confirm("이 거래를 삭제하시겠습니까?")) return;
@@ -125,7 +142,7 @@ export default function AdminTransactionsPage() {
   };
 
   // 월별 그룹화
-  const groupedTransactions = filteredTransactions.reduce((groups, transaction) => {
+  const groupedTransactions = displayedTransactions.reduce((groups, transaction) => {
     const date = new Date(transaction.date);
     const monthKey = `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
     
@@ -233,7 +250,7 @@ export default function AdminTransactionsPage() {
       <main className="p-4 space-y-4">
         {/* 요약 정보 */}
         <div className="text-sm text-gray-600">
-          총 {filteredTransactions.length}건
+          {displayedTransactions.length} / {filteredTransactions.length}건 표시
           {filteredTransactions.length !== transactions.length &&
             ` (전체 ${transactions.length}건)`}
         </div>
@@ -250,6 +267,7 @@ export default function AdminTransactionsPage() {
           </Card>
         ) : (
           <div className="space-y-6">
+            {/* 거래내역 그룹 */
             {Object.entries(groupedTransactions).map(([month, monthTransactions]) => (
               <div key={month}>
                 <h2 className="text-sm font-semibold text-gray-600 mb-3 sticky top-[120px] bg-gray-50 py-2">
@@ -383,6 +401,19 @@ export default function AdminTransactionsPage() {
                 </div>
               </div>
             ))}
+            
+            {/* 더보기 버튼 */}
+            {hasMore && (
+              <div className="text-center py-4">
+                <Button
+                  onClick={loadMore}
+                  variant="outline"
+                  className="w-full max-w-xs"
+                >
+                  더보기 ({displayedTransactions.length} / {filteredTransactions.length})
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </main>
@@ -400,6 +431,13 @@ export default function AdminTransactionsPage() {
           <button className="flex flex-col items-center text-primary">
             <span className="text-2xl">💼</span>
             <span className="text-xs font-medium">거래</span>
+          </button>
+          <button
+            className="flex flex-col items-center text-gray-600"
+            onClick={() => router.push("/admin/balances")}
+          >
+            <span className="text-2xl">👥</span>
+            <span className="text-xs">잔액</span>
           </button>
           <button
             className="flex flex-col items-center text-gray-600"

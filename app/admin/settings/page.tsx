@@ -333,6 +333,13 @@ export default function AdminSettingsPage() {
           </button>
           <button
             className="flex flex-col items-center text-gray-600"
+            onClick={() => router.push("/admin/balances")}
+          >
+            <span className="text-2xl">👥</span>
+            <span className="text-xs">잔액</span>
+          </button>
+          <button
+            className="flex flex-col items-center text-gray-600"
             onClick={() => router.push("/admin/reports")}
           >
             <span className="text-2xl">📊</span>

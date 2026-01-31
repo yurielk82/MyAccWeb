@@ -379,6 +379,13 @@ export default function AdminReportsPage() {
             <span className="text-2xl">💼</span>
             <span className="text-xs">거래</span>
           </button>
+          <button
+            className="flex flex-col items-center text-gray-600"
+            onClick={() => router.push("/admin/balances")}
+          >
+            <span className="text-2xl">👥</span>
+            <span className="text-xs">잔액</span>
+          </button>
           <button className="flex flex-col items-center text-primary">
             <span className="text-2xl">📊</span>
             <span className="text-xs font-medium">리포트</span>

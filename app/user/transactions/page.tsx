@@ -20,7 +20,10 @@ export default function UserTransactionsPage() {
   const { user } = useAuthStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
+  const [displayedTransactions, setDisplayedTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 100;
   const [searchQuery, setSearchQuery] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -33,6 +36,12 @@ export default function UserTransactionsPage() {
   useEffect(() => {
     applyFilters();
   }, [transactions, searchQuery, startDate, endDate]);
+
+  useEffect(() => {
+    const start = 0;
+    const end = page * itemsPerPage;
+    setDisplayedTransactions(filteredTransactions.slice(start, end));
+  }, [filteredTransactions, page]);
 
   const loadTransactions = async () => {
     if (!user) return;
@@ -81,10 +90,15 @@ export default function UserTransactionsPage() {
     setSearchQuery("");
     setStartDate("");
     setEndDate("");
+    setPage(1);
+  };
+
+  const loadMore = () => {
+    setPage(prev => prev + 1);
   };
 
   // 월별 그룹화
-  const groupedTransactions = filteredTransactions.reduce((groups, transaction) => {
+  const groupedTransactions = displayedTransactions.reduce((groups, transaction) => {
     const date = new Date(transaction.date);
     const monthKey = `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
 
@@ -158,7 +172,7 @@ export default function UserTransactionsPage() {
       <main className="p-4 space-y-4">
         {/* 요약 정보 */}
         <div className="text-sm text-gray-600">
-          총 {filteredTransactions.length}건
+          {displayedTransactions.length} / {filteredTransactions.length}건 표시
           {filteredTransactions.length !== transactions.length &&
             ` (전체 ${transactions.length}건)`}
         </div>
@@ -200,51 +214,86 @@ export default function UserTransactionsPage() {
                               </p>
                               {transaction.description && (
                                 <p className="text-sm text-gray-600 mt-1">
-                                  {transaction.description}
+                                  💬 {transaction.description}
                                 </p>
                               )}
                             </div>
                           </div>
                           <hr />
                           <div className="space-y-1 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">공급가액</span>
-                              <span className="font-medium">
-                                {formatCurrency(transaction.supplyAmount)}원
-                              </span>
-                            </div>
-                            {transaction.vat !== undefined && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">부가세</span>
-                                <span className="font-medium">
-                                  {formatCurrency(transaction.vat)}원
+                            {/* 세금계산서 */}
+                            {transaction.type === "세금계산서" && (
+                              <>
+                                {transaction.supplyAmount > 0 && transaction.vat && transaction.vat > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">총액</span>
+                                    <span className="font-medium">
+                                      {formatCurrency(transaction.supplyAmount + transaction.vat)}원
+                                    </span>
+                                  </div>
+                                )}
+                                {transaction.supplyAmount > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">공급가액</span>
+                                    <span className="font-medium">
+                                      {formatCurrency(transaction.supplyAmount)}원
+                                    </span>
+                                  </div>
+                                )}
+                                {transaction.vat && transaction.vat > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">부가세 (10%)</span>
+                                    <span className="font-medium text-gray-900">
+                                      {formatCurrency(transaction.vat)}원
+                                    </span>
+                                  </div>
+                                )}
+                                {transaction.feeAmount > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">
+                                      수수료 ({(transaction.feeRate * 100).toFixed(0)}%)
+                                    </span>
+                                    <span className="font-medium text-gray-900">
+                                      {formatCurrency(transaction.feeAmount)}원
+                                    </span>
+                                  </div>
+                                )}
+                                {transaction.depositAmount > 0 && (
+                                  <div className="flex justify-between font-semibold text-success">
+                                    <span>입금액</span>
+                                    <span>
+                                      +{formatCurrency(transaction.depositAmount)}원
+                                    </span>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                            
+                            {/* 입금 */}
+                            {transaction.type === "입금" && transaction.depositAmount > 0 && (
+                              <div className="flex justify-between font-semibold text-success">
+                                <span>입금액</span>
+                                <span>
+                                  +{formatCurrency(transaction.depositAmount)}원
                                 </span>
                               </div>
                             )}
-                            {transaction.feeAmount !== undefined && (
-                              <>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">
-                                    수수료 ({transaction.feeRate}%)
-                                  </span>
-                                  <span className="font-medium text-danger">
-                                    -{formatCurrency(transaction.feeAmount)}원
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">입금액</span>
-                                  <span className="font-medium text-success">
-                                    {formatCurrency(
-                                      transaction.supplyAmount - transaction.feeAmount
-                                    )}
-                                    원
-                                  </span>
-                                </div>
-                              </>
+                            
+                            {/* 출금 */}
+                            {transaction.type === "출금" && transaction.withdrawal > 0 && (
+                              <div className="flex justify-between font-semibold text-danger">
+                                <span>출금액</span>
+                                <span>
+                                  -{formatCurrency(transaction.withdrawal)}원
+                                </span>
+                              </div>
                             )}
+                            
                             <div className="flex justify-between font-semibold pt-1 border-t">
                               <span>잔액</span>
-                              <span>{formatCurrency(transaction.balance)}원</span>
+                              <span className={transaction.balance >= 0 ? "text-gray-900" : "text-red-600"}>
+                                {formatCurrency(transaction.balance)}원
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -254,6 +303,19 @@ export default function UserTransactionsPage() {
                 </div>
               </div>
             ))}
+            
+            {/* 더보기 버튼 */}
+            {filteredTransactions.length > displayedTransactions.length && (
+              <div className="text-center py-4">
+                <Button
+                  onClick={loadMore}
+                  variant="outline"
+                  className="w-full max-w-xs"
+                >
+                  더보기 ({displayedTransactions.length} / {filteredTransactions.length})
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </main>

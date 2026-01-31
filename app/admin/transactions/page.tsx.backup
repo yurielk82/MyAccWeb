@@ -43,6 +43,7 @@ export default function AdminTransactionsPage() {
   }, [transactions, searchQuery, selectedManager, selectedType, startDate, endDate]);
 
   useEffect(() => {
+    // 페이징 적용
     const start = 0;
     const end = page * itemsPerPage;
     setDisplayedTransactions(filteredTransactions.slice(start, end));
@@ -121,6 +122,8 @@ export default function AdminTransactionsPage() {
     setPage(prev => prev + 1);
   };
 
+  const hasMore = filteredTransactions.length > displayedTransactions.length;
+
   const handleDelete = async (id: string) => {
     if (!confirm("이 거래를 삭제하시겠습니까?")) return;
 
@@ -149,8 +152,6 @@ export default function AdminTransactionsPage() {
     groups[monthKey].push(transaction);
     return groups;
   }, {} as Record<string, Transaction[]>);
-
-  const hasMore = filteredTransactions.length > displayedTransactions.length;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -211,9 +212,9 @@ export default function AdminTransactionsPage() {
                   onChange={(e) => setSelectedType(e.target.value)}
                 >
                   <option value="all">전체</option>
-                  <option value="입금">입금</option>
-                  <option value="출금">출금</option>
-                  <option value="세금계산서">세금계산서</option>
+                  <option value="deposit">입금</option>
+                  <option value="withdraw">출금</option>
+                  <option value="tax_invoice">세금계산서</option>
                 </select>
               </div>
             </div>
@@ -266,6 +267,7 @@ export default function AdminTransactionsPage() {
           </Card>
         ) : (
           <div className="space-y-6">
+            {/* 거래내역 그룹 */
             {Object.entries(groupedTransactions).map(([month, monthTransactions]) => (
               <div key={month}>
                 <h2 className="text-sm font-semibold text-gray-600 mb-3 sticky top-[120px] bg-gray-50 py-2">
@@ -429,6 +431,13 @@ export default function AdminTransactionsPage() {
           <button className="flex flex-col items-center text-primary">
             <span className="text-2xl">💼</span>
             <span className="text-xs font-medium">거래</span>
+          </button>
+          <button
+            className="flex flex-col items-center text-gray-600"
+            onClick={() => router.push("/admin/balances")}
+          >
+            <span className="text-2xl">👥</span>
+            <span className="text-xs">잔액</span>
           </button>
           <button
             className="flex flex-col items-center text-gray-600"

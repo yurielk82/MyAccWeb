@@ -48,9 +48,9 @@ export default function UserDashboard() {
         });
 
         const monthlyTotal = thisMonth.reduce((sum, t) => {
-          if (t.type === "deposit") {
+          if (t.type === "입금") {
             return sum + (t.supplyAmount - (t.feeAmount || 0));
-          } else if (t.type === "withdraw") {
+          } else if (t.type === "출금") {
             return sum - t.supplyAmount;
           }
           return sum;

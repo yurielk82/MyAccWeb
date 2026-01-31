@@ -22,7 +22,7 @@ export default function EditTransactionPage() {
   const [formData, setFormData] = useState({
     date: "",
     managerEmail: "",
-    type: "deposit" as TransactionType,
+    type: "입금" as TransactionType,
     description: "",
     supplyAmount: "",
     vat: "",
@@ -118,8 +118,8 @@ export default function EditTransactionPage() {
   // 계산 결과
   const supplyAmount = parseFloat(formData.supplyAmount) || 0;
   const feeRate = parseFloat(formData.feeRate) || 0;
-  const feeAmount = formData.type === "deposit" ? calculateFee(supplyAmount, feeRate) : 0;
-  const depositAmount = formData.type === "deposit" ? supplyAmount - feeAmount : 0;
+  const feeAmount = formData.type === "입금" ? calculateFee(supplyAmount, feeRate) : 0;
+  const depositAmount = formData.type === "입금" ? supplyAmount - feeAmount : 0;
 
   if (loadingData) {
     return (
@@ -200,8 +200,19 @@ export default function EditTransactionPage() {
                     <input
                       type="radio"
                       name="type"
-                      value="deposit"
-                      checked={formData.type === "deposit"}
+                      value="세금계산서"
+                      checked={formData.type === "세금계산서"}
+                      onChange={handleChange}
+                      className="w-4 h-4"
+                    />
+                    <span>세금계산서</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="type"
+                      value="입금"
+                      checked={formData.type === "입금"}
                       onChange={handleChange}
                       className="w-4 h-4"
                     />
@@ -211,23 +222,12 @@ export default function EditTransactionPage() {
                     <input
                       type="radio"
                       name="type"
-                      value="withdraw"
-                      checked={formData.type === "withdraw"}
+                      value="출금"
+                      checked={formData.type === "출금"}
                       onChange={handleChange}
                       className="w-4 h-4"
                     />
                     <span>출금</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="type"
-                      value="tax_invoice"
-                      checked={formData.type === "tax_invoice"}
-                      onChange={handleChange}
-                      className="w-4 h-4"
-                    />
-                    <span>세금계산서</span>
                   </label>
                 </div>
               </div>
@@ -254,7 +254,7 @@ export default function EditTransactionPage() {
               </div>
 
               {/* 부가세 (세금계산서인 경우) */}
-              {formData.type === "tax_invoice" && (
+              {formData.type === "세금계산서" && (
                 <div>
                   <label htmlFor="vat" className="text-sm font-medium text-gray-700 mb-1 block">
                     💵 부가세 (원)
@@ -273,7 +273,7 @@ export default function EditTransactionPage() {
               )}
 
               {/* 수수료율 (입금인 경우) */}
-              {formData.type === "deposit" && (
+              {formData.type === "입금" && (
                 <div>
                   <label
                     htmlFor="feeRate"
@@ -316,7 +316,7 @@ export default function EditTransactionPage() {
           </Card>
 
           {/* 계산 결과 (입금인 경우) */}
-          {formData.type === "deposit" && supplyAmount > 0 && (
+          {formData.type === "입금" && supplyAmount > 0 && (
             <Card className="bg-primary-50 border-primary">
               <CardContent className="pt-6">
                 <div className="space-y-2">

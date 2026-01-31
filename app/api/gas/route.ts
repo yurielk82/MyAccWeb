@@ -1,5 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// snake_case를 camelCase로 변환
+function toCamelCase(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(item => toCamelCase(item));
+  }
+  
+  if (obj !== null && typeof obj === 'object') {
+    return Object.keys(obj).reduce((result, key) => {
+      const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+      result[camelKey] = toCamelCase(obj[key]);
+      return result;
+    }, {} as any);
+  }
+  
+  return obj;
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const action = searchParams.get('action');
@@ -18,14 +35,15 @@ export async function GET(request: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
       },
-      redirect: 'follow', // 리다이렉트 자동 따라가기
+      redirect: 'follow',
     });
 
-    const data = await response.json();
+    let data = await response.json();
+    
+    // snake_case를 camelCase로 변환
+    data = toCamelCase(data);
     
     // GAS 응답 구조를 프론트엔드 형식으로 변환
-    // GAS: { success: true, user: {...} }
-    // Frontend: { success: true, data: { user: {...} } }
     if (data.success && data.user && action === 'login') {
       return NextResponse.json({
         success: true,
@@ -35,9 +53,8 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    // 다른 액션들도 비슷하게 처리
+    // 다른 액션들 처리
     if (data.success && !data.data) {
-      // GAS에서 직접 데이터를 반환하는 경우
       const { success, error, message, ...rest } = data;
       return NextResponse.json({
         success,
@@ -68,10 +85,13 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
-      redirect: 'follow', // 리다이렉트 자동 따라가기
+      redirect: 'follow',
     });
 
-    const data = await response.json();
+    let data = await response.json();
+    
+    // snake_case를 camelCase로 변환
+    data = toCamelCase(data);
     
     return NextResponse.json(data);
   } catch (error) {

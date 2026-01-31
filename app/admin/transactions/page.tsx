@@ -292,7 +292,7 @@ export default function AdminTransactionsPage() {
                               </p>
                               {transaction.description && (
                                 <p className="text-sm text-gray-600">
-                                  {transaction.description}
+                                  💬 {transaction.description}
                                 </p>
                               )}
                             </div>
@@ -341,7 +341,7 @@ export default function AdminTransactionsPage() {
                                 {transaction.vat && transaction.vat > 0 && (
                                   <div className="flex justify-between">
                                     <span className="text-gray-600">부가세 (10%)</span>
-                                    <span className="font-medium">
+                                    <span className="font-medium text-gray-900">
                                       {formatCurrency(transaction.vat)}원
                                     </span>
                                   </div>
@@ -351,8 +351,8 @@ export default function AdminTransactionsPage() {
                                     <span className="text-gray-600">
                                       수수료 ({(transaction.feeRate * 100).toFixed(0)}%)
                                     </span>
-                                    <span className="font-medium text-danger">
-                                      -{formatCurrency(transaction.feeAmount)}원
+                                    <span className="font-medium text-gray-900">
+                                      {formatCurrency(transaction.feeAmount)}원
                                     </span>
                                   </div>
                                 )}

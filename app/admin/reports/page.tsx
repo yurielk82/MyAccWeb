@@ -45,17 +45,17 @@ export default function AdminReportsPage() {
       if (activeTab === "monthly") {
         const response = await reportsAPI.getMonthlyReport(year);
         if (response.success && response.data) {
-          setMonthlyData(response.data);
+          setMonthlyData(Array.isArray(response.data) ? response.data : []);
         }
       } else if (activeTab === "yearly") {
         const response = await reportsAPI.getYearlyReport();
         if (response.success && response.data) {
-          setYearlyData(response.data);
+          setYearlyData(Array.isArray(response.data) ? response.data : []);
         }
       } else if (activeTab === "manager") {
         const response = await reportsAPI.getManagerReport();
         if (response.success && response.data) {
-          setManagerData(response.data);
+          setManagerData(Array.isArray(response.data) ? response.data : []);
         }
       }
     } catch (error) {

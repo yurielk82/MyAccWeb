@@ -140,6 +140,11 @@ export default function AdminDashboard() {
                               {getTransactionTypeLabel(transaction.type)}
                             </span>
                           </p>
+                          {transaction.description && (
+                            <p className="text-sm text-gray-600">
+                              💬 {transaction.description}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <hr />

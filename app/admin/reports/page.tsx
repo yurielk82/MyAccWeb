@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { reportsAPI } from "@/lib/api/client";
+import { transactionsAPI } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
@@ -42,20 +42,90 @@ export default function AdminReportsPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      if (activeTab === "monthly") {
-        const response = await reportsAPI.getMonthlyReport(year);
-        if (response.success && response.data) {
-          setMonthlyData(Array.isArray(response.data) ? response.data : []);
-        }
-      } else if (activeTab === "yearly") {
-        const response = await reportsAPI.getYearlyReport();
-        if (response.success && response.data) {
-          setYearlyData(Array.isArray(response.data) ? response.data : []);
-        }
-      } else if (activeTab === "manager") {
-        const response = await reportsAPI.getManagerReport();
-        if (response.success && response.data) {
-          setManagerData(Array.isArray(response.data) ? response.data : []);
+      // 거래 데이터를 가져와서 리포트 계산
+      const response = await transactionsAPI.getTransactions(
+        process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@example.com",
+        "admin"
+      );
+
+      if (response.success && response.data && Array.isArray(response.data)) {
+        const transactions = response.data;
+
+        if (activeTab === "monthly") {
+          // 월별 리포트 계산
+          const monthlyMap = new Map<string, { totalFee: number; count: number }>();
+          transactions.forEach((t) => {
+            const date = new Date(t.date);
+            if (date.getFullYear() === year) {
+              const month = date.getMonth() + 1;
+              const key = `${month}월`;
+              const current = monthlyMap.get(key) || { totalFee: 0, count: 0 };
+              monthlyMap.set(key, {
+                totalFee: current.totalFee + (t.feeAmount || 0),
+                count: current.count + 1,
+              });
+            }
+          });
+
+          const monthlyResult: MonthlyReport[] = Array.from({ length: 12 }, (_, i) => {
+            const month = i + 1;
+            const key = `${month}월`;
+            const data = monthlyMap.get(key) || { totalFee: 0, count: 0 };
+            return {
+              month,
+              year,
+              totalFee: data.totalFee,
+              transactionCount: data.count,
+            };
+          });
+          setMonthlyData(monthlyResult);
+        } else if (activeTab === "yearly") {
+          // 연별 리포트 계산
+          const yearlyMap = new Map<number, { totalFee: number; count: number }>();
+          transactions.forEach((t) => {
+            const date = new Date(t.date);
+            const txYear = date.getFullYear();
+            const current = yearlyMap.get(txYear) || { totalFee: 0, count: 0 };
+            yearlyMap.set(txYear, {
+              totalFee: current.totalFee + (t.feeAmount || 0),
+              count: current.count + 1,
+            });
+          });
+
+          const yearlyResult: YearlyReport[] = Array.from(yearlyMap.entries())
+            .map(([y, data]) => ({
+              year: y,
+              totalFee: data.totalFee,
+              transactionCount: data.count,
+            }))
+            .sort((a, b) => b.year - a.year);
+          setYearlyData(yearlyResult);
+        } else if (activeTab === "manager") {
+          // 담당자별 리포트 계산
+          const managerMap = new Map<string, { name: string; totalFee: number; count: number }>();
+          transactions.forEach((t) => {
+            const email = t.managerEmail;
+            const current = managerMap.get(email) || {
+              name: t.managerName || email,
+              totalFee: 0,
+              count: 0,
+            };
+            managerMap.set(email, {
+              name: current.name,
+              totalFee: current.totalFee + (t.feeAmount || 0),
+              count: current.count + 1,
+            });
+          });
+
+          const managerResult: ManagerReport[] = Array.from(managerMap.entries())
+            .map(([email, data]) => ({
+              managerEmail: email,
+              managerName: data.name,
+              totalFee: data.totalFee,
+              transactionCount: data.count,
+            }))
+            .sort((a, b) => b.totalFee - a.totalFee);
+          setManagerData(managerResult);
         }
       }
     } catch (error) {

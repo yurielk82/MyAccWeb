@@ -34,22 +34,17 @@ export function formatDateTime(date: string | Date): string {
   }).format(d);
 }
 
-// 거래 타입 한글 변환
+// 거래 타입 한글 변환 (이미 한글이므로 그대로 반환)
 export function getTransactionTypeLabel(type: string): string {
-  const labels: Record<string, string> = {
-    deposit: "입금",
-    withdraw: "출금",
-    tax_invoice: "세금계산서",
-  };
-  return labels[type] || type;
+  return type; // GAS API가 이미 한글로 반환
 }
 
 // 거래 타입 색상
 export function getTransactionTypeColor(type: string): string {
   const colors: Record<string, string> = {
-    deposit: "text-success",
-    withdraw: "text-danger",
-    tax_invoice: "text-warning",
+    "입금": "text-success",
+    "출금": "text-danger",
+    "세금계산서": "text-warning",
   };
   return colors[type] || "text-gray-500";
 }

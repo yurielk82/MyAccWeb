@@ -8,22 +8,28 @@ export interface User {
   balance: number;
 }
 
-// 거래 구분
-export type TransactionType = "deposit" | "withdraw" | "tax_invoice";
+// 거래 구분 (GAS API는 한글로 반환)
+export type TransactionType = "입금" | "출금" | "세금계산서";
 
-// 거래내역 타입
+// 거래내역 타입 (GAS API 응답 구조에 맞춤)
 export interface Transaction {
   id: string;
   date: string;
+  managerName: string;
   managerEmail: string;
-  managerName?: string;
   type: TransactionType;
   description?: string;
-  supplyAmount: number;
-  vat?: number;
-  feeAmount?: number;
-  feeRate?: number;
-  balance: number;
+  vendorName?: string;
+  supplyAmount: number;        // 공급가액
+  vat?: number;                // 부가세
+  totalAmount?: number;        // 합계금액
+  feeRate: number;             // 수수료율
+  feeAmount: number;           // 수수료금액
+  depositAmount: number;       // 입금액 (공급가액 - 수수료)
+  withdrawal: number;          // 출금액
+  balance: number;             // 잔액
+  memo?: string;
+  isIssuedByMe?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

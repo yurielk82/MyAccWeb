@@ -50,10 +50,10 @@ export default function AdminDashboard() {
   });
 
   const todayTotal = todayTransactions.reduce((sum, t) => {
-    if (t.type === "deposit") {
-      return sum + (t.supplyAmount - (t.feeAmount || 0));
-    } else if (t.type === "withdraw") {
-      return sum - t.supplyAmount;
+    if (t.type === "입금" || t.type === "세금계산서") {
+      return sum + t.depositAmount; // 입금액 사용
+    } else if (t.type === "출금") {
+      return sum - t.withdrawal; // 출금액 사용
     }
     return sum;
   }, 0);
@@ -144,17 +144,17 @@ export default function AdminDashboard() {
                       </div>
                       <hr />
                       <div className="space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">공급가액</span>
-                          <span className="font-medium">
-                            {formatCurrency(transaction.supplyAmount)}원
-                          </span>
-                        </div>
-                        {transaction.feeAmount !== undefined && (
+                        {transaction.type === "세금계산서" && (
                           <>
                             <div className="flex justify-between">
+                              <span className="text-gray-600">공급가액</span>
+                              <span className="font-medium">
+                                {formatCurrency(transaction.supplyAmount)}원
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
                               <span className="text-gray-600">
-                                수수료 ({transaction.feeRate}%)
+                                수수료 ({(transaction.feeRate * 100).toFixed(0)}%)
                               </span>
                               <span className="font-medium text-danger">
                                 -{formatCurrency(transaction.feeAmount)}원
@@ -163,12 +163,26 @@ export default function AdminDashboard() {
                             <div className="flex justify-between">
                               <span className="text-gray-600">입금액</span>
                               <span className="font-medium text-success">
-                                {formatCurrency(
-                                  transaction.supplyAmount - transaction.feeAmount
-                                )}원
+                                +{formatCurrency(transaction.depositAmount)}원
                               </span>
                             </div>
                           </>
+                        )}
+                        {transaction.type === "출금" && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">출금액</span>
+                            <span className="font-medium text-danger">
+                              -{formatCurrency(transaction.withdrawal)}원
+                            </span>
+                          </div>
+                        )}
+                        {transaction.type === "입금" && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">입금액</span>
+                            <span className="font-medium text-success">
+                              +{formatCurrency(transaction.depositAmount)}원
+                            </span>
+                          </div>
                         )}
                         <div className="flex justify-between font-semibold">
                           <span>잔액</span>

@@ -19,7 +19,7 @@ export default function AddTransactionPage() {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     managerEmail: "",
-    type: "deposit" as TransactionType,
+    type: "입금" as TransactionType,
     description: "",
     supplyAmount: "",
     vat: "",
@@ -92,8 +92,8 @@ export default function AddTransactionPage() {
   // 계산 결과
   const supplyAmount = parseFloat(formData.supplyAmount) || 0;
   const feeRate = parseFloat(formData.feeRate) || 0;
-  const feeAmount = formData.type === "deposit" ? calculateFee(supplyAmount, feeRate) : 0;
-  const depositAmount = formData.type === "deposit" ? supplyAmount - feeAmount : 0;
+  const feeAmount = formData.type === "세금계산서" ? calculateFee(supplyAmount, feeRate) : 0;
+  const depositAmount = formData.type === "세금계산서" ? supplyAmount - feeAmount : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -166,8 +166,8 @@ export default function AddTransactionPage() {
                     <input
                       type="radio"
                       name="type"
-                      value="deposit"
-                      checked={formData.type === "deposit"}
+                      value="입금"
+                      checked={formData.type === "입금"}
                       onChange={handleChange}
                       className="w-4 h-4"
                     />
@@ -177,8 +177,8 @@ export default function AddTransactionPage() {
                     <input
                       type="radio"
                       name="type"
-                      value="withdraw"
-                      checked={formData.type === "withdraw"}
+                      value="출금"
+                      checked={formData.type === "출금"}
                       onChange={handleChange}
                       className="w-4 h-4"
                     />
@@ -188,8 +188,8 @@ export default function AddTransactionPage() {
                     <input
                       type="radio"
                       name="type"
-                      value="tax_invoice"
-                      checked={formData.type === "tax_invoice"}
+                      value="세금계산서"
+                      checked={formData.type === "세금계산서"}
                       onChange={handleChange}
                       className="w-4 h-4"
                     />
@@ -220,7 +220,7 @@ export default function AddTransactionPage() {
               </div>
 
               {/* 부가세 (세금계산서인 경우) */}
-              {formData.type === "tax_invoice" && (
+              {formData.type === "세금계산서" && (
                 <div>
                   <label htmlFor="vat" className="text-sm font-medium text-gray-700 mb-1 block">
                     💵 부가세 (원)
@@ -239,7 +239,7 @@ export default function AddTransactionPage() {
               )}
 
               {/* 수수료율 (입금인 경우) */}
-              {formData.type === "deposit" && (
+              {formData.type === "세금계산서" && (
                 <div>
                   <label
                     htmlFor="feeRate"
@@ -282,7 +282,7 @@ export default function AddTransactionPage() {
           </Card>
 
           {/* 계산 결과 (입금인 경우) */}
-          {formData.type === "deposit" && supplyAmount > 0 && (
+          {formData.type === "세금계산서" && supplyAmount > 0 && (
             <Card className="bg-primary-50 border-primary">
               <CardContent className="pt-6">
                 <div className="space-y-2">

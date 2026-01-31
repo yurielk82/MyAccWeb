@@ -1,0 +1,9 @@
+<svg width="180" height="180" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+  <rect width="180" height="180" rx="40" fill="#3B82F6"/>
+  <g transform="translate(90, 90)">
+    <circle r="50" fill="white" opacity="0.2"/>
+    <circle r="35" fill="white" opacity="0.4"/>
+    <path d="M-20,-20 L20,-20 L20,20 L-20,20 Z" fill="white" opacity="0.8"/>
+    <text x="0" y="15" font-size="50" text-anchor="middle" fill="white">💼</text>
+  </g>
+</svg>

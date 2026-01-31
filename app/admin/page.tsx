@@ -13,6 +13,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalBalance, setTotalBalance] = useState(0);
 
@@ -27,7 +28,8 @@ export default function AdminDashboard() {
     try {
       const response = await transactionsAPI.getTransactions(user.email, "admin");
       if (response.success && response.data) {
-        setTransactions(response.data.slice(0, 5)); // 최근 5개만
+        setAllTransactions(response.data); // 전체 데이터 저장
+        setTransactions(response.data.slice(0, 5)); // 최근 5개만 표시
         if (response.data.length > 0) {
           setTotalBalance(response.data[0].balance);
         }
@@ -59,18 +61,19 @@ export default function AdminDashboard() {
   }, 0);
 
   // 이번달 수수료 계산
-  const thisMonth = new Date().getMonth();
-  const thisYear = new Date().getFullYear();
-  const monthlyFee = transactions.reduce((sum, t) => {
+  const now = new Date();
+  const thisMonth = now.getMonth() + 1; // 1-12
+  const thisYear = now.getFullYear();
+  const monthlyFee = allTransactions.reduce((sum, t) => {
     const txDate = new Date(t.date);
-    if (txDate.getMonth() === thisMonth && txDate.getFullYear() === thisYear) {
+    if (txDate.getMonth() + 1 === thisMonth && txDate.getFullYear() === thisYear) {
       return sum + (t.feeAmount || 0);
     }
     return sum;
   }, 0);
 
   // 올해 수수료 계산
-  const yearlyFee = transactions.reduce((sum, t) => {
+  const yearlyFee = allTransactions.reduce((sum, t) => {
     const txDate = new Date(t.date);
     if (txDate.getFullYear() === thisYear) {
       return sum + (t.feeAmount || 0);
@@ -118,7 +121,7 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-2 gap-4">
           <Card>
             <CardContent className="pt-6 text-center">
-              <p className="text-sm text-gray-600">이번달 수수료</p>
+              <p className="text-sm text-gray-600">{thisMonth}월</p>
               <p className="text-2xl font-bold text-primary">
                 {formatCurrency(monthlyFee)}원
               </p>
@@ -126,7 +129,7 @@ export default function AdminDashboard() {
           </Card>
           <Card>
             <CardContent className="pt-6 text-center">
-              <p className="text-sm text-gray-600">올해 수수료</p>
+              <p className="text-sm text-gray-600">{thisYear}년</p>
               <p className="text-2xl font-bold text-primary">
                 {formatCurrency(yearlyFee)}원
               </p>

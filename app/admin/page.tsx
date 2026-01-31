@@ -144,12 +144,25 @@ export default function AdminDashboard() {
                       </div>
                       <hr />
                       <div className="space-y-1 text-sm">
+                        {/* 세금계산서 */}
                         {transaction.type === "세금계산서" && (
                           <>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">총액</span>
+                              <span className="font-medium">
+                                {formatCurrency(transaction.supplyAmount + (transaction.vat || 0))}원
+                              </span>
+                            </div>
                             <div className="flex justify-between">
                               <span className="text-gray-600">공급가액</span>
                               <span className="font-medium">
                                 {formatCurrency(transaction.supplyAmount)}원
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">부가세 (10%)</span>
+                              <span className="font-medium">
+                                {formatCurrency(transaction.vat || 0)}원
                               </span>
                             </div>
                             <div className="flex justify-between">
@@ -160,30 +173,35 @@ export default function AdminDashboard() {
                                 -{formatCurrency(transaction.feeAmount)}원
                               </span>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">입금액</span>
-                              <span className="font-medium text-success">
+                            <div className="flex justify-between font-semibold text-success">
+                              <span>입금액</span>
+                              <span>
                                 +{formatCurrency(transaction.depositAmount)}원
                               </span>
                             </div>
                           </>
                         )}
-                        {transaction.type === "출금" && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">출금액</span>
-                            <span className="font-medium text-danger">
-                              -{formatCurrency(transaction.withdrawal)}원
-                            </span>
-                          </div>
-                        )}
+                        
+                        {/* 입금 */}
                         {transaction.type === "입금" && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">입금액</span>
-                            <span className="font-medium text-success">
+                          <div className="flex justify-between font-semibold text-success">
+                            <span>입금액</span>
+                            <span>
                               +{formatCurrency(transaction.depositAmount)}원
                             </span>
                           </div>
                         )}
+                        
+                        {/* 출금 */}
+                        {transaction.type === "출금" && (
+                          <div className="flex justify-between font-semibold text-danger">
+                            <span>출금액</span>
+                            <span>
+                              -{formatCurrency(transaction.withdrawal)}원
+                            </span>
+                          </div>
+                        )}
+                        
                         <div className="flex justify-between font-semibold">
                           <span>잔액</span>
                           <span>{formatCurrency(transaction.balance)}원</span>

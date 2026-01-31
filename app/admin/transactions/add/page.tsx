@@ -19,10 +19,10 @@ export default function AddTransactionPage() {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     managerEmail: "",
-    type: "입금" as TransactionType,
+    type: "세금계산서" as TransactionType,
     description: "",
-    supplyAmount: "",
-    vat: "",
+    totalAmount: "", // 세금계산서: 총액 입력
+    amount: "", // 입금/출금: 금액 입력
     feeRate: "20",
   });
 
@@ -51,13 +51,17 @@ export default function AddTransactionPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.managerEmail || !formData.supplyAmount) {
-      alert("필수 항목을 입력해주세요.");
+    if (!formData.managerEmail) {
+      alert("담당자를 선택해주세요.");
       return;
     }
 
-    const supplyAmount = parseFloat(formData.supplyAmount);
-    if (isNaN(supplyAmount) || supplyAmount <= 0) {
+    if (formData.type === "세금계산서" && (!formData.totalAmount || parseFloat(formData.totalAmount) <= 0)) {
+      alert("올바른 총액을 입력해주세요.");
+      return;
+    }
+
+    if ((formData.type === "입금" || formData.type === "출금") && (!formData.amount || parseFloat(formData.amount) <= 0)) {
       alert("올바른 금액을 입력해주세요.");
       return;
     }
@@ -71,8 +75,8 @@ export default function AddTransactionPage() {
         type: formData.type,
         description: formData.description || undefined,
         supplyAmount,
-        vat: formData.vat ? parseFloat(formData.vat) : undefined,
-        feeRate: formData.feeRate ? parseFloat(formData.feeRate) : undefined,
+        vat: vat > 0 ? vat : undefined,
+        feeRate: feeRate > 0 ? feeRate : undefined,
       });
 
       if (response.success) {
@@ -90,10 +94,28 @@ export default function AddTransactionPage() {
   };
 
   // 계산 결과
-  const supplyAmount = parseFloat(formData.supplyAmount) || 0;
   const feeRate = parseFloat(formData.feeRate) || 0;
-  const feeAmount = formData.type === "세금계산서" ? calculateFee(supplyAmount, feeRate) : 0;
-  const depositAmount = formData.type === "세금계산서" ? supplyAmount - feeAmount : 0;
+  
+  let vat = 0;
+  let supplyAmount = 0;
+  let feeAmount = 0;
+  let depositAmount = 0;
+  let withdrawalAmount = 0;
+
+  if (formData.type === "세금계산서") {
+    // 세금계산서: 총액 입력 → 부가세(10%) 계산 → 공급가액 계산 → 수수료 계산 → 입금액 계산
+    const totalAmount = parseFloat(formData.totalAmount) || 0;
+    vat = Math.round(totalAmount / 11); // 부가세 10%
+    supplyAmount = totalAmount - vat; // 공급가액
+    feeAmount = Math.round(supplyAmount * (feeRate / 100)); // 수수료
+    depositAmount = supplyAmount - feeAmount; // 최종 입금액
+  } else if (formData.type === "입금") {
+    // 입금: 금액 그대로
+    depositAmount = parseFloat(formData.amount) || 0;
+  } else if (formData.type === "출금") {
+    // 출금: 금액 그대로
+    withdrawalAmount = parseFloat(formData.amount) || 0;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -166,6 +188,17 @@ export default function AddTransactionPage() {
                     <input
                       type="radio"
                       name="type"
+                      value="세금계산서"
+                      checked={formData.type === "세금계산서"}
+                      onChange={handleChange}
+                      className="w-4 h-4"
+                    />
+                    <span>세금계산서</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="type"
                       value="입금"
                       checked={formData.type === "입금"}
                       onChange={handleChange}
@@ -184,79 +217,76 @@ export default function AddTransactionPage() {
                     />
                     <span>출금</span>
                   </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="type"
-                      value="세금계산서"
-                      checked={formData.type === "세금계산서"}
-                      onChange={handleChange}
-                      className="w-4 h-4"
-                    />
-                    <span>세금계산서</span>
-                  </label>
                 </div>
               </div>
 
-              {/* 공급가액 */}
-              <div>
-                <label
-                  htmlFor="supplyAmount"
-                  className="text-sm font-medium text-gray-700 mb-1 block"
-                >
-                  💰 공급가액 (원) <span className="text-danger">*</span>
-                </label>
-                <Input
-                  id="supplyAmount"
-                  name="supplyAmount"
-                  type="number"
-                  placeholder="1000000"
-                  value={formData.supplyAmount}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  step="1"
-                />
-              </div>
-
-              {/* 부가세 (세금계산서인 경우) */}
+              {/* 세금계산서: 총액 입력 */}
               {formData.type === "세금계산서" && (
-                <div>
-                  <label htmlFor="vat" className="text-sm font-medium text-gray-700 mb-1 block">
-                    💵 부가세 (원)
-                  </label>
-                  <Input
-                    id="vat"
-                    name="vat"
-                    type="number"
-                    placeholder="100000"
-                    value={formData.vat}
-                    onChange={handleChange}
-                    min="0"
-                    step="1"
-                  />
-                </div>
+                <>
+                  <div>
+                    <label
+                      htmlFor="totalAmount"
+                      className="text-sm font-medium text-gray-700 mb-1 block"
+                    >
+                      💰 총액 (공급가액+부가세) <span className="text-danger">*</span>
+                    </label>
+                    <Input
+                      id="totalAmount"
+                      name="totalAmount"
+                      type="number"
+                      placeholder="11000000"
+                      value={formData.totalAmount}
+                      onChange={handleChange}
+                      required
+                      min="0"
+                      step="1"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      예: 11,000,000원 입력 시 → 공급가액 10,000,000원 + 부가세 1,000,000원
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="feeRate"
+                      className="text-sm font-medium text-gray-700 mb-1 block"
+                    >
+                      📊 수수료율 (%)
+                    </label>
+                    <Input
+                      id="feeRate"
+                      name="feeRate"
+                      type="number"
+                      placeholder="20"
+                      value={formData.feeRate}
+                      onChange={handleChange}
+                      min="0"
+                      max="100"
+                      step="0.1"
+                    />
+                  </div>
+                </>
               )}
 
-              {/* 수수료율 (입금인 경우) */}
-              {formData.type === "세금계산서" && (
+              {/* 입금/출금: 금액 입력 */}
+              {(formData.type === "입금" || formData.type === "출금") && (
                 <div>
                   <label
-                    htmlFor="feeRate"
+                    htmlFor="amount"
                     className="text-sm font-medium text-gray-700 mb-1 block"
                   >
-                    📊 수수료율 (%)
+                    💰 금액 (원) <span className="text-danger">*</span>
                   </label>
                   <Input
-                    id="feeRate"
-                    name="feeRate"
+                    id="amount"
+                    name="amount"
                     type="number"
-                    placeholder="20"
-                    value={formData.feeRate}
+                    placeholder="1000000"
+                    value={formData.amount}
                     onChange={handleChange}
+                    required
                     min="0"
-                    max="100"
-                    step="0.1"
+                    step="1"
                   />
                 </div>
               )}
@@ -281,21 +311,68 @@ export default function AddTransactionPage() {
             </CardContent>
           </Card>
 
-          {/* 계산 결과 (입금인 경우) */}
-          {formData.type === "세금계산서" && supplyAmount > 0 && (
-            <Card className="bg-primary-50 border-primary">
+          {/* 계산 결과 미리보기 */}
+          {formData.type === "세금계산서" && parseFloat(formData.totalAmount) > 0 && (
+            <Card className="bg-blue-50 border-blue-200">
               <CardContent className="pt-6">
                 <div className="space-y-2">
-                  <p className="text-sm font-semibold text-primary mb-3">💡 계산 결과</p>
+                  <p className="text-sm font-semibold text-blue-600 mb-3">💡 계산 결과 미리보기</p>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-700">총액</span>
+                    <span className="font-medium">
+                      {formatCurrency(parseFloat(formData.totalAmount))}원
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-700">공급가액</span>
+                    <span className="font-medium">
+                      {formatCurrency(supplyAmount)}원
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-700">부가세 (10%)</span>
+                    <span className="font-medium">
+                      {formatCurrency(vat)}원
+                    </span>
+                  </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-700">수수료 ({feeRate}%)</span>
                     <span className="font-semibold text-danger">
                       -{formatCurrency(feeAmount)}원
                     </span>
                   </div>
+                  <hr className="my-2" />
+                  <div className="flex justify-between text-base font-bold">
+                    <span>최종 입금액</span>
+                    <span className="text-success">+{formatCurrency(depositAmount)}원</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {formData.type === "입금" && parseFloat(formData.amount) > 0 && (
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="pt-6">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-green-600 mb-3">💡 입금 금액</p>
                   <div className="flex justify-between text-base font-bold">
                     <span>입금액</span>
-                    <span className="text-success">{formatCurrency(depositAmount)}원</span>
+                    <span className="text-success">+{formatCurrency(depositAmount)}원</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {formData.type === "출금" && parseFloat(formData.amount) > 0 && (
+            <Card className="bg-red-50 border-red-200">
+              <CardContent className="pt-6">
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-red-600 mb-3">💡 출금 금액</p>
+                  <div className="flex justify-between text-base font-bold">
+                    <span>출금액</span>
+                    <span className="text-danger">-{formatCurrency(withdrawalAmount)}원</span>
                   </div>
                 </div>
               </CardContent>

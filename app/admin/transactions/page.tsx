@@ -138,6 +138,219 @@ export default function AdminTransactionsPage() {
     }
   };
 
+  // CSV 내보내기 함수
+  const exportToCSV = () => {
+    if (filteredTransactions.length === 0) {
+      alert("내보낼 데이터가 없습니다.");
+      return;
+    }
+
+    // CSV 헤더
+    const headers = [
+      "날짜",
+      "담당자",
+      "이메일",
+      "구분",
+      "적요",
+      "총액",
+      "공급가액",
+      "부가세",
+      "수수료율(%)",
+      "수수료",
+      "입금액",
+      "출금액",
+      "잔액",
+      "메모"
+    ];
+
+    // 데이터 행 생성
+    const rows = filteredTransactions.map((t) => {
+      const totalAmount = t.type === "세금계산서" && t.supply_amount && t.vat 
+        ? t.supply_amount + t.vat 
+        : "";
+      
+      return [
+        t.date,
+        t.manager_name || "",
+        t.manager_email,
+        t.type,
+        t.description || "",
+        totalAmount,
+        t.supply_amount || "",
+        t.vat || "",
+        t.fee_rate ? (t.fee_rate * 100).toFixed(1) : "",
+        t.fee_amount || "",
+        t.deposit_amount || "",
+        t.withdrawal || "",
+        t.balance,
+        t.memo || ""
+      ];
+    });
+
+    // CSV 문자열 생성 (BOM 추가로 Excel에서 한글 정상 표시)
+    const BOM = "\uFEFF";
+    const csvContent = BOM + [
+      headers.join(","),
+      ...rows.map(row => 
+        row.map(cell => {
+          // 셀에 쉼표나 줄바꾸이 있으면 큰따옴표로 감싸기
+          const cellStr = String(cell);
+          if (cellStr.includes(",") || cellStr.includes("\n") || cellStr.includes("\"")) {
+            return `"${cellStr.replace(/"/g, '""')}"`;
+          }
+          return cellStr;
+        }).join(",")
+      )
+    ].join("\n");
+
+    // 파일 다운로드
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    // 파일명 생성 (날짜 포함)
+    const today = new Date().toISOString().split("T")[0];
+    let filename = `거래내역_${today}`;
+    
+    // 필터 조건 파일명에 추가
+    if (selectedManager !== "all") {
+      const managerUser = users.find(u => u.email === selectedManager);
+      if (managerUser) filename += `_${managerUser.name}`;
+    }
+    if (startDate) filename += `_${startDate}`;
+    if (endDate) filename += `~${endDate}`;
+    
+    filename += ".csv";
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    alert(`${filteredTransactions.length}건의 거래내역이 내보내기 되었습니다.\n파일명: ${filename}`);
+  };
+
+  // Excel 형식(XLSX) 내보내기 - 라이브러리 없이 간단한 HTML 테이블로 내보내기
+  const exportToExcel = () => {
+    if (filteredTransactions.length === 0) {
+      alert("내보낼 데이터가 없습니다.");
+      return;
+    }
+
+    // HTML 테이블 생성
+    let html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" 
+            xmlns:x="urn:schemas-microsoft-com:office:excel">
+      <head>
+        <meta charset="UTF-8">
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>거래내역</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          table { border-collapse: collapse; }
+          th, td { border: 1px solid #000; padding: 5px; }
+          th { background-color: #4472C4; color: white; font-weight: bold; }
+          .number { text-align: right; mso-number-format:"#,##0"; }
+          .date { mso-number-format:"yyyy-mm-dd"; }
+          .percent { mso-number-format:"0.0%"; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <thead>
+            <tr>
+              <th>날짜</th>
+              <th>담당자</th>
+              <th>이메일</th>
+              <th>구분</th>
+              <th>적요</th>
+              <th>총액</th>
+              <th>공급가액</th>
+              <th>부가세</th>
+              <th>수수료율(%)</th>
+              <th>수수료</th>
+              <th>입금액</th>
+              <th>출금액</th>
+              <th>잔액</th>
+              <th>메모</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    filteredTransactions.forEach((t) => {
+      const totalAmount = t.type === "세금계산서" && t.supply_amount && t.vat 
+        ? t.supply_amount + t.vat 
+        : "";
+      
+      html += `
+        <tr>
+          <td class="date">${t.date}</td>
+          <td>${t.manager_name || ""}</td>
+          <td>${t.manager_email}</td>
+          <td>${t.type}</td>
+          <td>${t.description || ""}</td>
+          <td class="number">${totalAmount}</td>
+          <td class="number">${t.supply_amount || ""}</td>
+          <td class="number">${t.vat || ""}</td>
+          <td class="number">${t.fee_rate ? (t.fee_rate * 100).toFixed(1) : ""}</td>
+          <td class="number">${t.fee_amount || ""}</td>
+          <td class="number">${t.deposit_amount || ""}</td>
+          <td class="number">${t.withdrawal || ""}</td>
+          <td class="number">${t.balance}</td>
+          <td>${t.memo || ""}</td>
+        </tr>
+      `;
+    });
+
+    html += `
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    // 파일 다운로드
+    const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    // 파일명 생성
+    const today = new Date().toISOString().split("T")[0];
+    let filename = `거래내역_${today}`;
+    
+    if (selectedManager !== "all") {
+      const managerUser = users.find(u => u.email === selectedManager);
+      if (managerUser) filename += `_${managerUser.name}`;
+    }
+    if (startDate) filename += `_${startDate}`;
+    if (endDate) filename += `~${endDate}`;
+    
+    filename += ".xls";
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    alert(`${filteredTransactions.length}건의 거래내역이 Excel로 내보내기 되었습니다.\n파일명: ${filename}`);
+  };
+
   // 월별 그룹화
   const groupedTransactions = displayedTransactions.reduce((groups, transaction) => {
     const date = new Date(transaction.date);
@@ -163,13 +376,31 @@ export default function AdminTransactionsPage() {
             </Button>
             <h1 className="text-xl font-bold">거래내역</h1>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            🔍 필터
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              🔍 필터
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={exportToCSV}
+              title="CSV 내보내기"
+            >
+              📄
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={exportToExcel}
+              title="Excel 내보내기"
+            >
+              📊
+            </Button>
+          </div>
         </div>
 
         {/* 검색바 */}
@@ -238,9 +469,17 @@ export default function AdminTransactionsPage() {
               </div>
             </div>
 
-            <Button variant="outline" size="sm" className="w-full" onClick={resetFilters}>
-              필터 초기화
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="flex-1" onClick={resetFilters}>
+                필터 초기화
+              </Button>
+              <Button variant="outline" size="sm" className="flex-1" onClick={exportToCSV}>
+                📄 CSV
+              </Button>
+              <Button variant="outline" size="sm" className="flex-1" onClick={exportToExcel}>
+                📊 Excel
+              </Button>
+            </div>
           </div>
         )}
       </header>

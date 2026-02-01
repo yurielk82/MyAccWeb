@@ -3,8 +3,8 @@ import { AuthProvider } from "@/components/AuthProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "My Acc - 장부 관리 시스템",
-  description: "스프레드시트 연동 장부 관리 시스템",
+  title: "App",
+  description: "",
   manifest: "/manifest.json",
   icons: {
     icon: [

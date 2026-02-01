@@ -1,7 +1,7 @@
 {
-  "name": "My Acc",
-  "short_name": "MyAcc",
-  "description": "스프레드시트 연동 장부 관리 시스템",
+  "name": "App",
+  "short_name": "App",
+  "description": "",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

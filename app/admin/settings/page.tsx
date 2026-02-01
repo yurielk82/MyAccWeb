@@ -313,9 +313,9 @@ export default function AdminSettingsPage() {
           </Card>
         </div>
 
-        {/* 시스템 설정 */}
+        {/* 설정 */}
         <div>
-          <h2 className="text-sm font-semibold text-gray-600 mb-3">💼 시스템 설정</h2>
+          <h2 className="text-sm font-semibold text-gray-600 mb-3">💼 설정</h2>
           <div className="space-y-2">
             <Card>
               <CardContent className="p-4">

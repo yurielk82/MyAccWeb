@@ -65,9 +65,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
-          <div className="text-6xl">💼</div>
-          <CardTitle>My Acc</CardTitle>
-          <CardDescription>간편한 장부 관리 시스템</CardDescription>
+          <CardTitle className="text-2xl">Login</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

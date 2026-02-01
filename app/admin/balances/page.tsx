@@ -48,14 +48,27 @@ export default function ManagerBalancesPage() {
         users.forEach((u) => {
           const managerTransactions = transactions
             .filter((t) => t.manager_email === u.email)
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            .sort((a, b) => {
+              // 1차: 날짜 기준 정렬 (최신순)
+              const dateCompare = new Date(b.date).getTime() - new Date(a.date).getTime();
+              if (dateCompare !== 0) return dateCompare;
+              // 2차: 같은 날짜면 created_at 기준 (최신순)
+              const createdA = a.created_at ? new Date(a.created_at).getTime() : 0;
+              const createdB = b.created_at ? new Date(b.created_at).getTime() : 0;
+              return createdB - createdA;
+            });
 
           if (managerTransactions.length > 0) {
             const latest = managerTransactions[0];
+            // balance가 null/undefined일 때만 0, 음수는 그대로 유지
+            const currentBalance = latest.balance !== null && latest.balance !== undefined 
+              ? latest.balance 
+              : 0;
+            
             balanceMap.set(u.email, {
               manager_email: u.email,
               manager_name: u.name,
-              balance: latest.balance || 0,
+              balance: currentBalance,
               transaction_count: managerTransactions.length,
               lastTransactionDate: latest.date,
             });

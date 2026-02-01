@@ -43,10 +43,22 @@ export default function AdminDashboard() {
         users.forEach((u) => {
           const managerTxs = allTxs
             .filter((t) => t.manager_email === u.email)
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            .sort((a, b) => {
+              // 1차: 날짜 기준 정렬 (최신순)
+              const dateCompare = new Date(b.date).getTime() - new Date(a.date).getTime();
+              if (dateCompare !== 0) return dateCompare;
+              // 2차: 같은 날짜면 created_at 기준 (최신순)
+              const createdA = a.created_at ? new Date(a.created_at).getTime() : 0;
+              const createdB = b.created_at ? new Date(b.created_at).getTime() : 0;
+              return createdB - createdA;
+            });
 
           if (managerTxs.length > 0) {
-            totalBal += managerTxs[0].balance || 0;
+            // balance가 null/undefined일 때만 0, 음수는 그대로 유지
+            const balance = managerTxs[0].balance !== null && managerTxs[0].balance !== undefined 
+              ? managerTxs[0].balance 
+              : 0;
+            totalBal += balance;
           }
         });
 

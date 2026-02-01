@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
 import { transactionsAPI, usersAPI } from "@/lib/supabase/api";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import type { Transaction, User } from "@/lib/supabase/client";
 
 export default function AdminTransactionsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuthStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
@@ -33,6 +34,15 @@ export default function AdminTransactionsPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+
+  // URL 파라미터에서 담당자 필터 설정
+  useEffect(() => {
+    const managerParam = searchParams.get('manager');
+    if (managerParam) {
+      setSelectedManager(managerParam);
+      setShowFilters(true); // 필터 영역 자동 표시
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     loadData();

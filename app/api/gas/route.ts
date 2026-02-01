@@ -24,10 +24,22 @@ export async function GET(request: NextRequest) {
   const gasUrl = process.env.NEXT_PUBLIC_GAS_API_URL;
   const url = new URL(gasUrl!);
   
+  // 클라이언트의 인증 헤더 가져오기
+  const userEmail = request.headers.get('x-user-email');
+  const userRole = request.headers.get('x-user-role');
+  
   // 모든 쿼리 파라미터 추가
   searchParams.forEach((value, key) => {
     url.searchParams.append(key, value);
   });
+  
+  // 인증 정보를 쿼리 파라미터로 추가
+  if (userEmail && !searchParams.has('requestUserEmail')) {
+    url.searchParams.append('requestUserEmail', userEmail);
+  }
+  if (userRole && !searchParams.has('requestUserRole')) {
+    url.searchParams.append('requestUserRole', userRole);
+  }
 
   try {
     const response = await fetch(url.toString(), {
@@ -78,13 +90,22 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const gasUrl = process.env.NEXT_PUBLIC_GAS_API_URL;
 
+  // 클라이언트의 인증 헤더 가져오기
+  const userEmail = request.headers.get('x-user-email');
+  const userRole = request.headers.get('x-user-role');
+
   try {
     const response = await fetch(gasUrl!, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        ...body,
+        // 인증 정보를 body에 추가 (GAS가 헤더를 읽을 수 없으므로)
+        requestUserEmail: body.requestUserEmail || userEmail,
+        requestUserRole: userRole,
+      }),
       redirect: 'follow',
     });
 

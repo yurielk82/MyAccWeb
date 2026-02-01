@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
-import { transactionsAPI, usersAPI } from "@/lib/api/client";
+import { transactionsAPI, usersAPI } from "@/lib/supabase/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { calculateFee, formatCurrency } from "@/lib/utils";
-import type { User, TransactionType } from "@/lib/types";
+import type { User, TransactionType } from "@/lib/supabase/client";
 
 export default function AddTransactionPage() {
   const router = useRouter();
@@ -18,13 +18,13 @@ export default function AddTransactionPage() {
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
-    managerEmail: "",
+    manager_email: "",
     type: "세금계산서" as TransactionType,
     description: "",
     memo: "",
-    totalAmount: "", // 세금계산서: 총액 입력
+    total_amount: "", // 세금계산서: 총액 입력
     amount: "", // 입금/출금: 금액 입력
-    feeRate: "20",
+    fee_rate: "20",
   });
 
   useEffect(() => {
@@ -57,12 +57,12 @@ export default function AddTransactionPage() {
       return;
     }
 
-    if (!formData.managerEmail) {
+    if (!formData.manager_email) {
       alert("담당자를 선택해주세요.");
       return;
     }
 
-    if (formData.type === "세금계산서" && (!formData.totalAmount || parseFloat(formData.totalAmount) <= 0)) {
+    if (formData.type === "세금계산서" && (!formData.total_amount || parseFloat(formData.total_amount) <= 0)) {
       alert("올바른 총액을 입력해주세요.");
       return;
     }
@@ -77,13 +77,13 @@ export default function AddTransactionPage() {
     try {
       const response = await transactionsAPI.addTransaction({
         date: formData.date,
-        managerEmail: formData.managerEmail,
+        manager_email: formData.manager_email,
         type: formData.type,
         description: formData.description,
         memo: formData.memo || undefined,
         supplyAmount,
         vat: vat > 0 ? vat : undefined,
-        feeRate: feeRate > 0 ? feeRate : undefined,
+        fee_rate: feeRate > 0 ? feeRate : undefined,
         requestUserEmail: user?.email, // 권한 확인용
       });
 
@@ -102,7 +102,7 @@ export default function AddTransactionPage() {
   };
 
   // 계산 결과
-  const feeRate = parseFloat(formData.feeRate) || 0;
+  const feeRate = parseFloat(formData.fee_rate) || 0;
   
   let vat = 0;
   let supplyAmount = 0;
@@ -112,7 +112,7 @@ export default function AddTransactionPage() {
 
   if (formData.type === "세금계산서") {
     // 세금계산서: 총액 입력 → 부가세(10%) 계산 → 공급가액 계산 → 수수료 계산 → 입금액 계산
-    const totalAmount = parseFloat(formData.totalAmount) || 0;
+    const totalAmount = parseFloat(formData.total_amount) || 0;
     vat = Math.round(totalAmount / 11); // 부가세 10%
     supplyAmount = totalAmount - vat; // 공급가액
     feeAmount = Math.round(supplyAmount * (feeRate / 100)); // 수수료
@@ -173,7 +173,7 @@ export default function AddTransactionPage() {
                   id="managerEmail"
                   name="managerEmail"
                   className="w-full h-12 rounded-lg border border-gray-300 px-4 text-base"
-                  value={formData.managerEmail}
+                  value={formData.manager_email}
                   onChange={handleChange}
                   required
                 >
@@ -243,7 +243,7 @@ export default function AddTransactionPage() {
                       name="totalAmount"
                       type="number"
                       placeholder="11000000"
-                      value={formData.totalAmount}
+                      value={formData.total_amount}
                       onChange={handleChange}
                       required
                       min="0"
@@ -266,7 +266,7 @@ export default function AddTransactionPage() {
                       name="feeRate"
                       type="number"
                       placeholder="20"
-                      value={formData.feeRate}
+                      value={formData.fee_rate}
                       onChange={handleChange}
                       min="0"
                       max="100"
@@ -345,7 +345,7 @@ export default function AddTransactionPage() {
           </Card>
 
           {/* 계산 결과 미리보기 */}
-          {formData.type === "세금계산서" && parseFloat(formData.totalAmount) > 0 && (
+          {formData.type === "세금계산서" && parseFloat(formData.total_amount) > 0 && (
             <Card className="bg-blue-50 border-blue-200">
               <CardContent className="pt-6">
                 <div className="space-y-2">
@@ -353,7 +353,7 @@ export default function AddTransactionPage() {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-700">총액</span>
                     <span className="font-medium">
-                      {formatCurrency(parseFloat(formData.totalAmount))}원
+                      {formatCurrency(parseFloat(formData.total_amount))}원
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { authAPI } from "@/lib/api/client";
+import { authAPI } from "@/lib/supabase/api";
 import { isValidEmail } from "@/lib/utils";
 
 export default function ForgotPasswordPage() {

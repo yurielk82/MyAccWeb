@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
-import { authAPI, usersAPI, settingsAPI } from "@/lib/api/client";
+import { authAPI, usersAPI, settingsAPI } from "@/lib/supabase/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import type { User, Settings } from "@/lib/types";
+import type { User, Settings } from "@/lib/supabase/client";
 
 export default function AdminSettingsPage() {
   const router = useRouter();

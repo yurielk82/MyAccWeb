@@ -2,11 +2,30 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { transactionsAPI } from "@/lib/api/client";
+import { transactionsAPI } from "@/lib/supabase/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
-import type { MonthlyReport, YearlyReport, ManagerReport } from "@/lib/types";
+
+interface MonthlyReport {
+  month: string;
+  total_fee: number;
+  transaction_count: number;
+}
+
+interface YearlyReport {
+  year: number;
+  total_fee: number;
+  transaction_count: number;
+}
+
+interface ManagerReport {
+  manager_email: string;
+  manager_name: string;
+  total_fee: number;
+  transaction_count: number;
+}
+
 import {
   BarChart,
   Bar,
@@ -61,7 +80,7 @@ export default function AdminReportsPage() {
               const key = `${month}월`;
               const current = monthlyMap.get(key) || { totalFee: 0, count: 0 };
               monthlyMap.set(key, {
-                totalFee: current.totalFee + (t.feeAmount || 0),
+                totalFee: current.totalFee + (t.fee_amount || 0),
                 count: current.count + 1,
               });
             }
@@ -87,7 +106,7 @@ export default function AdminReportsPage() {
             const txYear = date.getFullYear();
             const current = yearlyMap.get(txYear) || { totalFee: 0, count: 0 };
             yearlyMap.set(txYear, {
-              totalFee: current.totalFee + (t.feeAmount || 0),
+              totalFee: current.totalFee + (t.fee_amount || 0),
               count: current.count + 1,
             });
           });
@@ -104,23 +123,23 @@ export default function AdminReportsPage() {
           // 담당자별 리포트 계산
           const managerMap = new Map<string, { name: string; totalFee: number; count: number }>();
           transactions.forEach((t) => {
-            const email = t.managerEmail;
+            const email = t.manager_email;
             const current = managerMap.get(email) || {
-              name: t.managerName || email,
+              name: t.manager_name || email,
               totalFee: 0,
               count: 0,
             };
             managerMap.set(email, {
               name: current.name,
-              totalFee: current.totalFee + (t.feeAmount || 0),
+              totalFee: current.totalFee + (t.fee_amount || 0),
               count: current.count + 1,
             });
           });
 
           const managerResult: ManagerReport[] = Array.from(managerMap.entries())
             .map(([email, data]) => ({
-              managerEmail: email,
-              managerName: data.name,
+              manager_email: email,
+              manager_name: data.name,
               totalFee: data.totalFee,
               transactionCount: data.count,
             }))
@@ -372,7 +391,7 @@ export default function AdminReportsPage() {
                             cx="50%"
                             cy="50%"
                             outerRadius={80}
-                            label={(entry) => entry.managerName}
+                            label={(entry) => entry.manager_name}
                           >
                             {managerData.map((entry, index) => (
                               <Cell
@@ -402,7 +421,7 @@ export default function AdminReportsPage() {
                       <div className="space-y-2">
                         {managerData.map((item, index) => (
                           <div
-                            key={item.managerEmail}
+                            key={item.manager_email}
                             className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                           >
                             <div className="flex items-center gap-3">
@@ -411,7 +430,7 @@ export default function AdminReportsPage() {
                                 style={{ backgroundColor: COLORS[index % COLORS.length] }}
                               />
                               <div>
-                                <p className="font-medium">{item.managerName}</p>
+                                <p className="font-medium">{item.manager_name}</p>
                                 <p className="text-xs text-gray-500">
                                   ({item.transactionCount}건)
                                 </p>

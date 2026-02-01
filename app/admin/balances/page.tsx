@@ -3,15 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
-import { transactionsAPI, usersAPI } from "@/lib/api/client";
+import { transactionsAPI, usersAPI } from "@/lib/supabase/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
-import type { Transaction, User } from "@/lib/types";
+import type { Transaction, User } from "@/lib/supabase/client";
 
 interface ManagerBalance {
-  managerEmail: string;
-  managerName: string;
+  manager_email: string;
+  manager_name: string;
   balance: number;
   transactionCount: number;
   lastTransactionDate: string;
@@ -38,8 +38,8 @@ export default function ManagerBalancesPage() {
       ]);
 
       if (transactionsRes.success && transactionsRes.data && usersRes.success && usersRes.data) {
-        const transactions = transactionsRes.data;
-        const users = usersRes.data;
+        const transactions: Transaction[] = transactionsRes.data as Transaction[];
+        const users: User[] = usersRes.data as User[];
 
         // 담당자별 최신 잔액 계산
         const balanceMap = new Map<string, ManagerBalance>();
@@ -47,22 +47,22 @@ export default function ManagerBalancesPage() {
         // 각 담당자의 가장 최근 거래에서 잔액 가져오기
         users.forEach((u) => {
           const managerTransactions = transactions
-            .filter((t) => t.managerEmail === u.email)
+            .filter((t) => t.manager_email === u.email)
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
           if (managerTransactions.length > 0) {
             const latest = managerTransactions[0];
             balanceMap.set(u.email, {
-              managerEmail: u.email,
-              managerName: u.name,
+              manager_email: u.email,
+              manager_name: u.name,
               balance: latest.balance || 0,
               transactionCount: managerTransactions.length,
               lastTransactionDate: latest.date,
             });
           } else {
             balanceMap.set(u.email, {
-              managerEmail: u.email,
-              managerName: u.name,
+              manager_email: u.email,
+              manager_name: u.name,
               balance: 0,
               transactionCount: 0,
               lastTransactionDate: "",
@@ -124,19 +124,19 @@ export default function ManagerBalancesPage() {
           <div className="space-y-3">
             {balances.map((balance) => (
               <Card
-                key={balance.managerEmail}
+                key={balance.manager_email}
                 className="hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() =>
                   router.push(
-                    `/admin/transactions?manager=${balance.managerEmail}`
+                    `/admin/transactions?manager=${balance.manager_email}`
                   )
                 }
               >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="font-medium text-lg">{balance.managerName}</p>
-                      <p className="text-sm text-gray-500">{balance.managerEmail}</p>
+                      <p className="font-medium text-lg">{balance.manager_name}</p>
+                      <p className="text-sm text-gray-500">{balance.manager_email}</p>
                       <div className="flex gap-4 mt-2 text-xs text-gray-600">
                         <span>거래 {balance.transactionCount}건</span>
                         {balance.lastTransactionDate && (

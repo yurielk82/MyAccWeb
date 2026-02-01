@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { mappingsAPI, usersAPI } from "@/lib/api/client";
+import { mappingsAPI, usersAPI } from "@/lib/supabase/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import type { Mapping, User } from "@/lib/types";
+import type { Mapping, User } from "@/lib/supabase/client";
 
 export default function AdminMappingsPage() {
   const router = useRouter();
@@ -18,8 +18,8 @@ export default function AdminMappingsPage() {
 
   // 추가 폼 데이터
   const [addForm, setAddForm] = useState({
-    vendorName: "",
-    managerEmail: "",
+    vendor_name: "",
+    manager_email: "",
   });
   const [adding, setAdding] = useState(false);
 
@@ -52,21 +52,28 @@ export default function AdminMappingsPage() {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!addForm.vendorName || !addForm.managerEmail) {
+    if (!addForm.vendor_name || !addForm.manager_email) {
       alert("모든 항목을 입력해주세요.");
       return;
     }
 
     setAdding(true);
     try {
+      const selectedUser = users.find(u => u.email === addForm.manager_email);
+      if (!selectedUser) {
+        alert("선택한 담당자를 찾을 수 없습니다.");
+        return;
+      }
+
       const response = await mappingsAPI.addMapping({
-        vendorName: addForm.vendorName,
-        managerEmail: addForm.managerEmail,
+        vendor_name: addForm.vendor_name,
+        manager_name: selectedUser.name,
+        manager_email: addForm.manager_email,
       });
 
       if (response.success) {
         alert("매핑이 추가되었습니다.");
-        setAddForm({ vendorName: "", managerEmail: "" });
+        setAddForm({ vendor_name: "", manager_email: "" });
         setShowAddModal(false);
         loadData();
       } else {
@@ -100,9 +107,9 @@ export default function AdminMappingsPage() {
   const filteredMappings = searchQuery
     ? mappings.filter(
         (m) =>
-          m.vendorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          m.managerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          m.managerEmail.toLowerCase().includes(searchQuery.toLowerCase())
+          m.vendor_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          m.manager_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          m.manager_email.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : mappings;
 
@@ -164,10 +171,10 @@ export default function AdminMappingsPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="font-medium text-lg">🏢 {mapping.vendorName}</p>
+                      <p className="font-medium text-lg">🏢 {mapping.vendor_name}</p>
                       <div className="text-2xl text-gray-400 my-1">↓</div>
-                      <p className="text-gray-700">👤 {mapping.managerName}</p>
-                      <p className="text-sm text-gray-500">📧 {mapping.managerEmail}</p>
+                      <p className="text-gray-700">👤 {mapping.manager_name}</p>
+                      <p className="text-sm text-gray-500">📧 {mapping.manager_email}</p>
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -208,9 +215,9 @@ export default function AdminMappingsPage() {
                 </label>
                 <Input
                   placeholder="(주)에이스상사"
-                  value={addForm.vendorName}
+                  value={addForm.vendor_name}
                   onChange={(e) =>
-                    setAddForm({ ...addForm, vendorName: e.target.value })
+                    setAddForm({ ...addForm, vendor_name: e.target.value })
                   }
                   required
                 />
@@ -222,9 +229,9 @@ export default function AdminMappingsPage() {
                 </label>
                 <select
                   className="w-full h-12 rounded-lg border border-gray-300 px-4 text-base"
-                  value={addForm.managerEmail}
+                  value={addForm.manager_email}
                   onChange={(e) =>
-                    setAddForm({ ...addForm, managerEmail: e.target.value })
+                    setAddForm({ ...addForm, manager_email: e.target.value })
                   }
                   required
                 >

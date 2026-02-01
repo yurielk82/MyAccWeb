@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
-import { transactionsAPI, usersAPI } from "@/lib/api/client";
+import { transactionsAPI, usersAPI } from "@/lib/supabase/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import {
   getTransactionTypeLabel,
   getTransactionTypeColor,
 } from "@/lib/utils";
-import type { Transaction, User } from "@/lib/types";
+import type { Transaction, User } from "@/lib/supabase/client";
 
 export default function AdminTransactionsPage() {
   const router = useRouter();
@@ -80,16 +80,16 @@ export default function AdminTransactionsPage() {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (t) =>
-          t.managerName?.toLowerCase().includes(query) ||
-          t.managerEmail.toLowerCase().includes(query) ||
+          t.manager_name?.toLowerCase().includes(query) ||
+          t.manager_email.toLowerCase().includes(query) ||
           t.description?.toLowerCase().includes(query) ||
-          t.supplyAmount.toString().includes(query)
+          t.supply_amount.toString().includes(query)
       );
     }
 
     // 담당자 필터
     if (selectedManager !== "all") {
-      filtered = filtered.filter((t) => t.managerEmail === selectedManager);
+      filtered = filtered.filter((t) => t.manager_email === selectedManager);
     }
 
     // 구분 필터
@@ -285,7 +285,7 @@ export default function AdminTransactionsPage() {
                                 📅 {formatDateTime(transaction.date)}
                               </p>
                               <p className="font-medium">
-                                {transaction.managerName || transaction.managerEmail} |{" "}
+                                {transaction.manager_name || transaction.manager_email} |{" "}
                                 <span className={getTransactionTypeColor(transaction.type)}>
                                   {getTransactionTypeLabel(transaction.type)}
                                 </span>
@@ -327,19 +327,19 @@ export default function AdminTransactionsPage() {
                             {/* 세금계산서 */}
                             {transaction.type === "세금계산서" && (
                               <>
-                                {transaction.supplyAmount > 0 && transaction.vat && transaction.vat > 0 && (
+                                {transaction.supply_amount > 0 && transaction.vat && transaction.vat > 0 && (
                                   <div className="flex justify-between">
                                     <span className="text-gray-600">총액</span>
                                     <span className="font-medium">
-                                      {formatCurrency(transaction.supplyAmount + transaction.vat)}원
+                                      {formatCurrency(transaction.supply_amount + transaction.vat)}원
                                     </span>
                                   </div>
                                 )}
-                                {transaction.supplyAmount > 0 && (
+                                {transaction.supply_amount > 0 && (
                                   <div className="flex justify-between">
                                     <span className="text-gray-600">공급가액</span>
                                     <span className="font-medium">
-                                      {formatCurrency(transaction.supplyAmount)}원
+                                      {formatCurrency(transaction.supply_amount)}원
                                     </span>
                                   </div>
                                 )}
@@ -351,21 +351,21 @@ export default function AdminTransactionsPage() {
                                     </span>
                                   </div>
                                 )}
-                                {transaction.feeAmount > 0 && (
+                                {transaction.fee_amount > 0 && (
                                   <div className="flex justify-between">
                                     <span className="text-gray-600">
-                                      수수료 ({(transaction.feeRate * 100).toFixed(0)}%)
+                                      수수료 ({(transaction.fee_rate * 100).toFixed(0)}%)
                                     </span>
                                     <span className="font-medium text-gray-900">
-                                      {formatCurrency(transaction.feeAmount)}원
+                                      {formatCurrency(transaction.fee_amount)}원
                                     </span>
                                   </div>
                                 )}
-                                {transaction.depositAmount > 0 && (
+                                {transaction.deposit_amount > 0 && (
                                   <div className="flex justify-between font-semibold text-success">
                                     <span>입금액</span>
                                     <span>
-                                      +{formatCurrency(transaction.depositAmount)}원
+                                      +{formatCurrency(transaction.deposit_amount)}원
                                     </span>
                                   </div>
                                 )}
@@ -373,11 +373,11 @@ export default function AdminTransactionsPage() {
                             )}
                             
                             {/* 입금 */}
-                            {transaction.type === "입금" && transaction.depositAmount > 0 && (
+                            {transaction.type === "입금" && transaction.deposit_amount > 0 && (
                               <div className="flex justify-between font-semibold text-success">
                                 <span>입금액</span>
                                 <span>
-                                  +{formatCurrency(transaction.depositAmount)}원
+                                  +{formatCurrency(transaction.deposit_amount)}원
                                 </span>
                               </div>
                             )}

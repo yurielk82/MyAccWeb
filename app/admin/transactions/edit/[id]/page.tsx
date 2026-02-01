@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
-import { transactionsAPI, usersAPI } from "@/lib/api/client";
+import { transactionsAPI, usersAPI } from "@/lib/supabase/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { calculateFee, formatCurrency } from "@/lib/utils";
-import type { User, TransactionType, Transaction } from "@/lib/types";
+import type { User, TransactionType, Transaction } from "@/lib/supabase/client";
 
 export default function EditTransactionPage() {
   const router = useRouter();
@@ -21,13 +21,13 @@ export default function EditTransactionPage() {
 
   const [formData, setFormData] = useState({
     date: "",
-    managerEmail: "",
+    manager_email: "",
     type: "입금" as TransactionType,
     description: "",
     memo: "",
-    supplyAmount: "",
+    supply_amount: "",
     vat: "",
-    feeRate: "20",
+    fee_rate: "20",
   });
 
   useEffect(() => {
@@ -51,13 +51,13 @@ export default function EditTransactionPage() {
         if (transaction) {
           setFormData({
             date: transaction.date.split("T")[0],
-            managerEmail: transaction.managerEmail,
+            manager_email: transaction.manager_email,
             type: transaction.type,
             description: transaction.description || "",
             memo: transaction.memo || "",
-            supplyAmount: transaction.supplyAmount.toString(),
+            supply_amount: transaction.supply_amount.toString(),
             vat: transaction.vat?.toString() || "",
-            feeRate: transaction.feeRate?.toString() || "20",
+            fee_rate: transaction.fee_rate?.toString() || "20",
           });
         }
       }
@@ -78,12 +78,12 @@ export default function EditTransactionPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.managerEmail || !formData.supplyAmount) {
+    if (!formData.manager_email || !formData.supply_amount) {
       alert("필수 항목을 입력해주세요.");
       return;
     }
 
-    const supplyAmount = parseFloat(formData.supplyAmount);
+    const supplyAmount = parseFloat(formData.supply_amount);
     if (isNaN(supplyAmount) || supplyAmount <= 0) {
       alert("올바른 금액을 입력해주세요.");
       return;
@@ -95,13 +95,13 @@ export default function EditTransactionPage() {
       const response = await transactionsAPI.updateTransaction({
         id: transactionId,
         date: formData.date,
-        managerEmail: formData.managerEmail,
+        manager_email: formData.manager_email,
         type: formData.type,
         description: formData.description,
         memo: formData.memo || undefined,
         supplyAmount,
         vat: formData.vat ? parseFloat(formData.vat) : undefined,
-        feeRate: formData.feeRate ? parseFloat(formData.feeRate) : undefined,
+        fee_rate: formData.fee_rate ? parseFloat(formData.fee_rate) : undefined,
         requestUserEmail: user?.email, // 권한 확인용
       });
 
@@ -120,8 +120,8 @@ export default function EditTransactionPage() {
   };
 
   // 계산 결과
-  const supplyAmount = parseFloat(formData.supplyAmount) || 0;
-  const feeRate = parseFloat(formData.feeRate) || 0;
+  const supplyAmount = parseFloat(formData.supply_amount) || 0;
+  const feeRate = parseFloat(formData.fee_rate) || 0;
   const feeAmount = formData.type === "입금" ? calculateFee(supplyAmount, feeRate) : 0;
   const depositAmount = formData.type === "입금" ? supplyAmount - feeAmount : 0;
 
@@ -181,7 +181,7 @@ export default function EditTransactionPage() {
                   id="managerEmail"
                   name="managerEmail"
                   className="w-full h-12 rounded-lg border border-gray-300 px-4 text-base"
-                  value={formData.managerEmail}
+                  value={formData.manager_email}
                   onChange={handleChange}
                   required
                 >
@@ -249,7 +249,7 @@ export default function EditTransactionPage() {
                   name="supplyAmount"
                   type="number"
                   placeholder="1000000"
-                  value={formData.supplyAmount}
+                  value={formData.supply_amount}
                   onChange={handleChange}
                   required
                   min="0"
@@ -290,7 +290,7 @@ export default function EditTransactionPage() {
                     name="feeRate"
                     type="number"
                     placeholder="20"
-                    value={formData.feeRate}
+                    value={formData.fee_rate}
                     onChange={handleChange}
                     min="0"
                     max="100"

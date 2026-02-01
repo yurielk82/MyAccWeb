@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
-import { transactionsAPI, usersAPI } from "@/lib/api/client";
+import { transactionsAPI, usersAPI } from "@/lib/supabase/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDateTime, getTransactionTypeLabel, getTransactionTypeColor } from "@/lib/utils";
-import type { Transaction, User } from "@/lib/types";
+import type { Transaction, User } from "@/lib/supabase/client";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -32,8 +32,8 @@ export default function AdminDashboard() {
       ]);
 
       if (transactionsRes.success && transactionsRes.data && usersRes.success && usersRes.data) {
-        const allTxs = transactionsRes.data;
-        const users = usersRes.data;
+        const allTxs: Transaction[] = transactionsRes.data as Transaction[];
+        const users: User[] = usersRes.data as User[];
 
         setAllTransactions(allTxs); // 전체 데이터 저장
         setTransactions(allTxs.slice(0, 5)); // 최근 5개만 표시
@@ -42,7 +42,7 @@ export default function AdminDashboard() {
         let totalBal = 0;
         users.forEach((u) => {
           const managerTxs = allTxs
-            .filter((t) => t.managerEmail === u.email)
+            .filter((t) => t.manager_email === u.email)
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
           if (managerTxs.length > 0) {
@@ -71,7 +71,7 @@ export default function AdminDashboard() {
 
   const todayTotal = todayTransactions.reduce((sum, t) => {
     if (t.type === "입금" || t.type === "세금계산서") {
-      return sum + t.depositAmount; // 입금액 사용
+      return sum + t.deposit_amount; // 입금액 사용
     } else if (t.type === "출금") {
       return sum - t.withdrawal; // 출금액 사용
     }
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
   const monthlyFee = allTransactions.reduce((sum, t) => {
     const txDate = new Date(t.date);
     if (txDate.getMonth() + 1 === thisMonth && txDate.getFullYear() === thisYear) {
-      return sum + (t.feeAmount || 0);
+      return sum + (t.fee_amount || 0);
     }
     return sum;
   }, 0);
@@ -94,7 +94,7 @@ export default function AdminDashboard() {
   const yearlyFee = allTransactions.reduce((sum, t) => {
     const txDate = new Date(t.date);
     if (txDate.getFullYear() === thisYear) {
-      return sum + (t.feeAmount || 0);
+      return sum + (t.fee_amount || 0);
     }
     return sum;
   }, 0);
@@ -184,7 +184,7 @@ export default function AdminDashboard() {
                             📅 {formatDateTime(transaction.date)}
                           </p>
                           <p className="font-medium">
-                            {transaction.managerName || transaction.managerEmail} |{" "}
+                            {transaction.manager_name || transaction.manager_email} |{" "}
                             <span className={getTransactionTypeColor(transaction.type)}>
                               {getTransactionTypeLabel(transaction.type)}
                             </span>
@@ -201,19 +201,19 @@ export default function AdminDashboard() {
                         {/* 세금계산서 */}
                         {transaction.type === "세금계산서" && (
                           <>
-                            {transaction.supplyAmount > 0 && transaction.vat && transaction.vat > 0 && (
+                            {transaction.supply_amount > 0 && transaction.vat && transaction.vat > 0 && (
                               <div className="flex justify-between">
                                 <span className="text-gray-600">총액</span>
                                 <span className="font-medium">
-                                  {formatCurrency(transaction.supplyAmount + transaction.vat)}원
+                                  {formatCurrency(transaction.supply_amount + transaction.vat)}원
                                 </span>
                               </div>
                             )}
-                            {transaction.supplyAmount > 0 && (
+                            {transaction.supply_amount > 0 && (
                               <div className="flex justify-between">
                                 <span className="text-gray-600">공급가액</span>
                                 <span className="font-medium">
-                                  {formatCurrency(transaction.supplyAmount)}원
+                                  {formatCurrency(transaction.supply_amount)}원
                                 </span>
                               </div>
                             )}
@@ -225,21 +225,21 @@ export default function AdminDashboard() {
                                 </span>
                               </div>
                             )}
-                            {transaction.feeAmount > 0 && (
+                            {transaction.fee_amount > 0 && (
                               <div className="flex justify-between">
                                 <span className="text-gray-600">
-                                  수수료 ({(transaction.feeRate * 100).toFixed(0)}%)
+                                  수수료 ({(transaction.fee_rate * 100).toFixed(0)}%)
                                 </span>
                                 <span className="font-medium text-gray-900">
-                                  {formatCurrency(transaction.feeAmount)}원
+                                  {formatCurrency(transaction.fee_amount)}원
                                 </span>
                               </div>
                             )}
-                            {transaction.depositAmount > 0 && (
+                            {transaction.deposit_amount > 0 && (
                               <div className="flex justify-between font-semibold text-success">
                                 <span>입금액</span>
                                 <span>
-                                  +{formatCurrency(transaction.depositAmount)}원
+                                  +{formatCurrency(transaction.deposit_amount)}원
                                 </span>
                               </div>
                             )}
@@ -247,11 +247,11 @@ export default function AdminDashboard() {
                         )}
                         
                         {/* 입금 */}
-                        {transaction.type === "입금" && transaction.depositAmount > 0 && (
+                        {transaction.type === "입금" && transaction.deposit_amount > 0 && (
                           <div className="flex justify-between font-semibold text-success">
                             <span>입금액</span>
                             <span>
-                              +{formatCurrency(transaction.depositAmount)}원
+                              +{formatCurrency(transaction.deposit_amount)}원
                             </span>
                           </div>
                         )}

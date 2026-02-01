@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
-import { transactionsAPI } from "@/lib/api/client";
+import { transactionsAPI } from "@/lib/supabase/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency, formatDateTime, getTransactionTypeLabel, getTransactionTypeColor } from "@/lib/utils";
-import type { Transaction } from "@/lib/types";
+import type { Transaction } from "@/lib/supabase/client";
 
 export default function UserDashboard() {
   const router = useRouter();
@@ -30,7 +30,7 @@ export default function UserDashboard() {
       const response = await transactionsAPI.getTransactions(user.email, "user");
       if (response.success && response.data) {
         const userTransactions = response.data.filter(
-          (t) => t.managerEmail === user.email
+          (t) => t.manager_email === user.email
         );
         setTransactions(userTransactions.slice(0, 10)); // 최근 10개
         
@@ -50,7 +50,7 @@ export default function UserDashboard() {
 
         const deposit = thisMonth.reduce((sum, t) => {
           if (t.type === "입금" || t.type === "세금계산서") {
-            return sum + (t.depositAmount || 0);
+            return sum + (t.deposit_amount || 0);
           }
           return sum;
         }, 0);
@@ -84,10 +84,10 @@ export default function UserDashboard() {
       return (
         transactionDate.getMonth() === now.getMonth() &&
         transactionDate.getFullYear() === now.getFullYear() &&
-        t.feeAmount
+        t.fee_amount
       );
     })
-    .reduce((sum, t) => sum + (t.feeAmount || 0), 0);
+    .reduce((sum, t) => sum + (t.fee_amount || 0), 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -199,19 +199,19 @@ export default function UserDashboard() {
                         {/* 세금계산서 */}
                         {transaction.type === "세금계산서" && (
                           <>
-                            {transaction.supplyAmount > 0 && transaction.vat && transaction.vat > 0 && (
+                            {transaction.supply_amount > 0 && transaction.vat && transaction.vat > 0 && (
                               <div className="flex justify-between">
                                 <span className="text-gray-600">총액</span>
                                 <span className="font-medium">
-                                  {formatCurrency(transaction.supplyAmount + transaction.vat)}원
+                                  {formatCurrency(transaction.supply_amount + transaction.vat)}원
                                 </span>
                               </div>
                             )}
-                            {transaction.supplyAmount > 0 && (
+                            {transaction.supply_amount > 0 && (
                               <div className="flex justify-between">
                                 <span className="text-gray-600">공급가액</span>
                                 <span className="font-medium">
-                                  {formatCurrency(transaction.supplyAmount)}원
+                                  {formatCurrency(transaction.supply_amount)}원
                                 </span>
                               </div>
                             )}
@@ -223,21 +223,21 @@ export default function UserDashboard() {
                                 </span>
                               </div>
                             )}
-                            {transaction.feeAmount > 0 && (
+                            {transaction.fee_amount > 0 && (
                               <div className="flex justify-between">
                                 <span className="text-gray-600">
-                                  수수료 ({(transaction.feeRate * 100).toFixed(0)}%)
+                                  수수료 ({(transaction.fee_rate * 100).toFixed(0)}%)
                                 </span>
                                 <span className="font-medium text-gray-900">
-                                  {formatCurrency(transaction.feeAmount)}원
+                                  {formatCurrency(transaction.fee_amount)}원
                                 </span>
                               </div>
                             )}
-                            {transaction.depositAmount > 0 && (
+                            {transaction.deposit_amount > 0 && (
                               <div className="flex justify-between font-semibold text-success">
                                 <span>입금액</span>
                                 <span>
-                                  +{formatCurrency(transaction.depositAmount)}원
+                                  +{formatCurrency(transaction.deposit_amount)}원
                                 </span>
                               </div>
                             )}
@@ -245,11 +245,11 @@ export default function UserDashboard() {
                         )}
                         
                         {/* 입금 */}
-                        {transaction.type === "입금" && transaction.depositAmount > 0 && (
+                        {transaction.type === "입금" && transaction.deposit_amount > 0 && (
                           <div className="flex justify-between font-semibold text-success">
                             <span>입금액</span>
                             <span>
-                              +{formatCurrency(transaction.depositAmount)}원
+                              +{formatCurrency(transaction.deposit_amount)}원
                             </span>
                           </div>
                         )}

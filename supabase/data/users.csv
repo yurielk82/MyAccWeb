@@ -1,0 +1,11 @@
+email,name,password,role,phone,fee_rate,balance,created_at,last_login
+ssmtransite@gmail.com,관리자,JAvlGPq9JyTdtvBO6x2llnRI1+gxwIyPqCKAn3THIKk=,admin,,0.2,0,2026-01-31 20:38:30.347,2026-02-01 10:22:45.287
+rmkim@katech.re.kr,김락민,5gbjiw2MGbJM8O44CBgxYup81j/3kS27IrXoAyhrREY=,user,010-1234-5678,0.2,10524866,2026-01-31 20:52:42.680,2026-02-01 09:37:23.704
+angelus999@naver.com,류경진,5gbjiw2MGbJM8O44CBgxYup81j/3kS27IrXoAyhrREY=,user,010-2345-6789,0.2,1706769,2026-01-31 20:52:42.680,
+mhlee1@katech.re.kr,이민혁,5gbjiw2MGbJM8O44CBgxYup81j/3kS27IrXoAyhrREY=,user,010-3456-7890,0.2,84800,2026-01-31 20:52:42.680,
+cwnam@katech.re.kr,남충우,5gbjiw2MGbJM8O44CBgxYup81j/3kS27IrXoAyhrREY=,user,010-4567-8901,0.2,550200,2026-01-31 20:52:42.680,
+junhyung-kim@ynu.ac.kr,김준형,5gbjiw2MGbJM8O44CBgxYup81j/3kS27IrXoAyhrREY=,user,010-6308-1793,0.2,1778000,2026-01-31 20:52:42.680,
+choi@example.com,박장훈,5gbjiw2MGbJM8O44CBgxYup81j/3kS27IrXoAyhrREY=,user,010-5678-9012,0.2,0,2026-01-31 20:52:42.680,
+park@example.com,박계령,5gbjiw2MGbJM8O44CBgxYup81j/3kS27IrXoAyhrREY=,user,010-4567-8901,0.2,-863100,2026-01-31 20:52:42.680,
+choi@example.com,유진호,5gbjiw2MGbJM8O44CBgxYup81j/3kS27IrXoAyhrREY=,user,010-5678-9012,0.2,0,2026-01-31 20:52:42.680,
+hjjung@dhxcompany.com,정해준,5gbjiw2MGbJM8O44CBgxYup81j/3kS27IrXoAyhrREY=,user,010-3456-7890,0.2,-2690000,2026-01-31 20:52:42.680,

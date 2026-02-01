@@ -1,0 +1,379 @@
+/**
+ * Supabase API 함수들
+ * 
+ * 기존 GAS API를 대체하는 Supabase 함수들
+ */
+
+import { supabase } from './client'
+import type { User, Transaction, Mapping, Setting } from './client'
+
+// ==================== 인증 ====================
+
+export const authAPI = {
+  /**
+   * 로그인
+   */
+  login: async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) throw error
+
+      // 사용자 정보 가져오기
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single()
+
+      if (userError) throw userError
+
+      // last_login 업데이트
+      await supabase
+        .from('users')
+        .update({ last_login: new Date().toISOString() })
+        .eq('email', email)
+
+      return {
+        success: true,
+        data: {
+          user: userData,
+          session: data.session,
+        },
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || '로그인 실패',
+      }
+    }
+  },
+
+  /**
+   * 로그아웃
+   */
+  logout: async () => {
+    const { error } = await supabase.auth.signOut()
+    return { success: !error, error: error?.message }
+  },
+
+  /**
+   * 회원가입
+   */
+  register: async (data: {
+    email: string
+    password: string
+    name: string
+    phone?: string
+  }) => {
+    try {
+      // Supabase Auth에 사용자 생성
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+      })
+
+      if (authError) throw authError
+
+      // users 테이블에 추가 정보 저장
+      const { error: dbError } = await supabase.from('users').insert([
+        {
+          email: data.email,
+          name: data.name,
+          password_hash: '', // Supabase Auth가 관리하므로 빈 값
+          role: 'user',
+          phone: data.phone || null,
+          fee_rate: 0.2,
+          balance: 0,
+        },
+      ])
+
+      if (dbError) throw dbError
+
+      return { success: true, data: authData }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  },
+
+  /**
+   * 비밀번호 변경
+   */
+  changePassword: async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    })
+    return { success: !error, error: error?.message }
+  },
+
+  /**
+   * 비밀번호 재설정 이메일 전송
+   */
+  resetPassword: async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email)
+    return { success: !error, error: error?.message }
+  },
+}
+
+// ==================== 사용자 ====================
+
+export const usersAPI = {
+  /**
+   * 사용자 목록 조회 (관리자 전용)
+   */
+  getUsers: async () => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  },
+
+  /**
+   * 사용자 정보 수정
+   */
+  updateUser: async (email: string, updates: Partial<User>) => {
+    const { data, error } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('email', email)
+      .select()
+      .single()
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  },
+}
+
+// ==================== 거래 ====================
+
+export const transactionsAPI = {
+  /**
+   * 거래 목록 조회
+   */
+  getTransactions: async (email: string, role: 'admin' | 'user') => {
+    let query = supabase
+      .from('transactions')
+      .select('*')
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false })
+
+    // 일반 사용자는 자신의 거래만 조회
+    if (role !== 'admin') {
+      query = query.eq('manager_email', email)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  },
+
+  /**
+   * 거래 추가
+   */
+  addTransaction: async (transaction: Partial<Transaction>) => {
+    // 수수료 계산
+    const supplyAmount = transaction.supply_amount || 0
+    const feeRate = transaction.fee_rate || 0.2
+    const feeAmount = Math.round(supplyAmount * feeRate)
+    const depositAmount = supplyAmount - feeAmount
+
+    const { data, error } = await supabase
+      .from('transactions')
+      .insert([
+        {
+          ...transaction,
+          supply_amount: supplyAmount,
+          fee_rate: feeRate,
+          fee_amount: feeAmount,
+          deposit_amount: depositAmount,
+        } as any,
+      ])
+      .select()
+      .single()
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  },
+
+  /**
+   * 거래 수정
+   */
+  updateTransaction: async (id: string, updates: Partial<Transaction>) => {
+    const { data, error } = await supabase
+      .from('transactions')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  },
+
+  /**
+   * 거래 삭제
+   */
+  deleteTransaction: async (id: string) => {
+    const { error } = await supabase.from('transactions').delete().eq('id', id)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
+  },
+}
+
+// ==================== 매핑 ====================
+
+export const mappingsAPI = {
+  /**
+   * 매핑 목록 조회
+   */
+  getMappings: async () => {
+    const { data, error } = await supabase
+      .from('mappings')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  },
+
+  /**
+   * 매핑 추가
+   */
+  addMapping: async (mapping: {
+    vendor_name: string
+    manager_name: string
+    manager_email: string
+  }) => {
+    const { data, error } = await supabase
+      .from('mappings')
+      .insert([mapping])
+      .select()
+      .single()
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  },
+
+  /**
+   * 매핑 삭제
+   */
+  deleteMapping: async (id: string) => {
+    const { error } = await supabase.from('mappings').delete().eq('id', id)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
+  },
+}
+
+// ==================== 설정 ====================
+
+export const settingsAPI = {
+  /**
+   * 설정 조회
+   */
+  getSettings: async () => {
+    const { data, error } = await supabase.from('settings').select('*')
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    // 객체 형태로 변환
+    const settings: Record<string, string> = {}
+    data.forEach((setting) => {
+      settings[setting.key] = setting.value
+    })
+
+    return { success: true, data: settings }
+  },
+
+  /**
+   * 설정 업데이트
+   */
+  updateSetting: async (key: string, value: string) => {
+    const { data, error } = await supabase
+      .from('settings')
+      .update({ value, updated_at: new Date().toISOString() })
+      .eq('key', key)
+      .select()
+      .single()
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  },
+}
+
+// ==================== 리포트 ====================
+
+export const reportsAPI = {
+  /**
+   * 월별 수수료 리포트
+   */
+  getMonthlyReport: async (year: number) => {
+    const { data, error } = await supabase
+      .from('monthly_fee_summary')
+      .select('*')
+      .gte('month', `${year}-01-01`)
+      .lte('month', `${year}-12-31`)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  },
+
+  /**
+   * 담당자별 잔액
+   */
+  getManagerBalances: async () => {
+    const { data, error } = await supabase
+      .from('manager_balances')
+      .select('*')
+      .order('latest_transaction_balance', { ascending: false })
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, data }
+  },
+}

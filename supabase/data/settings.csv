@@ -1,0 +1,4 @@
+key,value,description,updated_at
+default_fee_rate,0.2,기본 수수료율 (20%),2026-01-31 20:38:29.554
+admin_email,ssmtransite@gmail.com,관리자 이메일,2026-01-31 20:38:29.554
+app_version,1.0.0,앱 버전,2026-01-31 20:38:29.554

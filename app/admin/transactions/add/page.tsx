@@ -101,7 +101,15 @@ export default function AddTransactionPage() {
         alert("거래가 추가되었습니다.");
         router.push("/admin/transactions");
       } else {
-        alert(response.error || "거래 추가에 실패했습니다.");
+        console.error("거래 추가 실패:", response.error);
+        console.error("전송 데이터:", {
+          date: formData.date,
+          manager_name: selectedUser.name,
+          manager_email: formData.manager_email,
+          type: formData.type,
+          description: formData.description,
+        });
+        alert(`거래 추가에 실패했습니다.\n\n오류: ${response.error}\n\n브라우저 콘솔(F12)을 확인해주세요.`);
       }
     } catch (error) {
       alert("거래 추가 중 오류가 발생했습니다.");

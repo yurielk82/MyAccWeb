@@ -227,25 +227,12 @@ export const transactionsAPI = {
 
   /**
    * 거래 추가
+   * 페이지에서 계산된 값을 그대로 사용
    */
   addTransaction: async (transaction: Partial<Transaction>) => {
-    // 수수료 계산
-    const supply_amount = transaction.supply_amount || 0
-    const fee_rate = transaction.fee_rate || 0.2
-    const fee_amount = Math.round(supply_amount * fee_rate)
-    const deposit_amount = supply_amount - fee_amount
-
-    const insertData = {
-      ...transaction,
-      supply_amount,
-      fee_rate,
-      fee_amount,
-      deposit_amount,
-    }
-
     const { data, error } = await supabase
       .from('transactions')
-      .insert(insertData)
+      .insert(transaction)
       .select()
       .single()
 

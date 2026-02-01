@@ -91,7 +91,8 @@ export default function AddTransactionPage() {
         memo: formData.memo || undefined,
         supply_amount,
         vat: vat > 0 ? vat : undefined,
-        fee_rate: fee_rate > 0 ? fee_rate : undefined,
+        fee_rate: fee_rate > 0 ? fee_rate / 100 : undefined, // 퍼센트 → 소수 변환 (20% → 0.2)
+        fee_amount: fee_amount > 0 ? fee_amount : undefined,
         withdrawal: withdrawalAmount > 0 ? withdrawalAmount : undefined,
         deposit_amount: deposit_amount > 0 ? deposit_amount : undefined,
         total_amount: formData.type === '세금계산서' ? parseFloat(formData.total_amount) : undefined,

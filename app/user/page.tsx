@@ -187,39 +187,88 @@ export default function UserDashboard() {
                               {getTransactionTypeLabel(transaction.type)}
                             </span>
                           </p>
+                          {transaction.description && (
+                            <p className="text-sm text-gray-600 mt-1">
+                              💬 {transaction.description}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <hr />
                       <div className="space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">공급가액</span>
-                          <span className="font-medium">
-                            {formatCurrency(transaction.supplyAmount)}원
-                          </span>
-                        </div>
-                        {transaction.feeAmount !== undefined && (
+                        {/* 세금계산서 */}
+                        {transaction.type === "세금계산서" && (
                           <>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">
-                                수수료 ({transaction.feeRate}%)
-                              </span>
-                              <span className="font-medium text-danger">
-                                -{formatCurrency(transaction.feeAmount)}원
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">입금액</span>
-                              <span className="font-medium text-success">
-                                {formatCurrency(
-                                  transaction.supplyAmount - transaction.feeAmount
-                                )}원
-                              </span>
-                            </div>
+                            {transaction.supplyAmount > 0 && transaction.vat && transaction.vat > 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">총액</span>
+                                <span className="font-medium">
+                                  {formatCurrency(transaction.supplyAmount + transaction.vat)}원
+                                </span>
+                              </div>
+                            )}
+                            {transaction.supplyAmount > 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">공급가액</span>
+                                <span className="font-medium">
+                                  {formatCurrency(transaction.supplyAmount)}원
+                                </span>
+                              </div>
+                            )}
+                            {transaction.vat && transaction.vat > 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">부가세 (10%)</span>
+                                <span className="font-medium text-gray-900">
+                                  {formatCurrency(transaction.vat)}원
+                                </span>
+                              </div>
+                            )}
+                            {transaction.feeAmount > 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">
+                                  수수료 ({(transaction.feeRate * 100).toFixed(0)}%)
+                                </span>
+                                <span className="font-medium text-gray-900">
+                                  {formatCurrency(transaction.feeAmount)}원
+                                </span>
+                              </div>
+                            )}
+                            {transaction.depositAmount > 0 && (
+                              <div className="flex justify-between font-semibold text-success">
+                                <span>입금액</span>
+                                <span>
+                                  +{formatCurrency(transaction.depositAmount)}원
+                                </span>
+                              </div>
+                            )}
                           </>
                         )}
+                        
+                        {/* 입금 */}
+                        {transaction.type === "입금" && transaction.depositAmount > 0 && (
+                          <div className="flex justify-between font-semibold text-success">
+                            <span>입금액</span>
+                            <span>
+                              +{formatCurrency(transaction.depositAmount)}원
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* 출금 */}
+                        {transaction.type === "출금" && transaction.withdrawal > 0 && (
+                          <div className="flex justify-between font-semibold text-danger">
+                            <span>출금액</span>
+                            <span>
+                              -{formatCurrency(transaction.withdrawal)}원
+                            </span>
+                          </div>
+                        )}
+                        
                         <div className="flex justify-between font-semibold">
                           <span>잔액</span>
-                          <span>{formatCurrency(transaction.balance)}원</span>
+                          <span className={transaction.balance >= 0 ? "" : "text-red-600"}>
+                            {formatCurrency(transaction.balance)}원
+                          </span>
                         </div>
                       </div>
                     </div>

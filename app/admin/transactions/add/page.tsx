@@ -51,6 +51,11 @@ export default function AddTransactionPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!formData.description || formData.description.trim() === "") {
+      alert("메모를 입력해주세요.");
+      return;
+    }
+
     if (!formData.managerEmail) {
       alert("담당자를 선택해주세요.");
       return;
@@ -73,7 +78,7 @@ export default function AddTransactionPage() {
         date: formData.date,
         managerEmail: formData.managerEmail,
         type: formData.type,
-        description: formData.description || undefined,
+        description: formData.description,
         supplyAmount,
         vat: vat > 0 ? vat : undefined,
         feeRate: feeRate > 0 ? feeRate : undefined,
@@ -297,15 +302,16 @@ export default function AddTransactionPage() {
                   htmlFor="description"
                   className="text-sm font-medium text-gray-700 mb-1 block"
                 >
-                  📄 메모 (선택)
+                  📄 메모 <span className="text-danger">*</span>
                 </label>
                 <textarea
                   id="description"
                   name="description"
                   className="w-full h-20 rounded-lg border border-gray-300 px-4 py-2 text-base resize-none"
-                  placeholder="메모를 입력하세요"
+                  placeholder="메모를 입력하세요 (필수)"
                   value={formData.description}
                   onChange={handleChange}
+                  required
                 />
               </div>
             </CardContent>

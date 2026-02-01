@@ -33,18 +33,12 @@ export default function AddTransactionPage() {
 
   const loadUsers = async () => {
     try {
-      console.log('🔍 [DEBUG] Loading users...');
       const response = await usersAPI.getUsers();
-      console.log('📊 [DEBUG] Users response:', response);
-      console.log('👥 [DEBUG] Total users:', response.data?.length);
-      console.log('👑 [DEBUG] Admin users:', response.data?.filter(u => u.role === 'admin').length);
-      
       if (response.success && response.data) {
         setUsers(response.data);
-        console.log('✅ [DEBUG] Users set in state');
       }
     } catch (error) {
-      console.error("❌ [DEBUG] Failed to load users:", error);
+      console.error("Failed to load users:", error);
     }
   };
 
@@ -81,18 +75,12 @@ export default function AddTransactionPage() {
     setLoading(true);
 
     try {
-      console.log('🚀 [DEBUG] Starting transaction add...');
-      console.log('👤 [DEBUG] Current user:', user);
-      console.log('📝 [DEBUG] Form data:', formData);
-      
       // 선택된 담당자 정보 찾기
       const selectedUser = users.find(u => u.email === formData.manager_email);
       if (!selectedUser) {
         alert("담당자 정보를 찾을 수 없습니다.");
         return;
       }
-      
-      console.log('🎯 [DEBUG] Selected user:', selectedUser);
 
       const transactionData = {
         date: formData.date,
@@ -109,11 +97,7 @@ export default function AddTransactionPage() {
         total_amount: formData.type === '세금계산서' ? parseFloat(formData.total_amount) : undefined,
       };
       
-      console.log('📤 [DEBUG] Sending transaction data:', transactionData);
-      
       const response = await transactionsAPI.addTransaction(transactionData);
-      
-      console.log('📥 [DEBUG] Transaction response:', response);
 
       if (response.success) {
         alert("거래가 추가되었습니다.");
@@ -214,7 +198,7 @@ export default function AddTransactionPage() {
                   required
                 >
                   <option value="">선택해주세요</option>
-                  {users.filter(u => u.role !== 'admin').map((u) => (
+                  {users.map((u) => (
                     <option key={u.email} value={u.email}>
                       {u.name} ({u.email})
                     </option>

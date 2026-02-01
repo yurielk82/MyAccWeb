@@ -1,17 +1,18 @@
 /**
  * Supabase API 함수들
  * 
- * 기존 GAS API를 대체하는 Supabase 함수들
+ * users 테이블 없이 Supabase Auth만 사용
+ * user_metadata에 name, role, phone, fee_rate 저장
  */
 
 import { supabase } from './client'
-import type { User, Transaction, Mapping, Setting, InsertTransaction, InsertUser, InsertMapping } from './client'
+import type { User, Transaction, Mapping, Setting, InsertTransaction, InsertMapping } from './client'
 
 // ==================== 인증 ====================
 
 export const authAPI = {
   /**
-   * 로그인
+   * 로그인 - Supabase Auth만 사용
    */
   login: async (email: string, password: string) => {
     try {
@@ -22,25 +23,25 @@ export const authAPI = {
 
       if (error) throw error
 
-      // 사용자 정보 가져오기
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single()
-
-      if (userError) throw userError
-
-      // last_login 업데이트
-      await supabase
-        .from('users')
-        .update({ last_login: new Date().toISOString() } as any)
-        .eq('email', email)
+      // user_metadata에서 사용자 정보 추출
+      const authUser = data.user
+      const metadata = authUser?.user_metadata || {}
+      
+      const user: User = {
+        id: authUser?.id || '',
+        email: authUser?.email || '',
+        name: metadata.name || email.split('@')[0],
+        role: metadata.role || 'user',
+        phone: metadata.phone || null,
+        fee_rate: metadata.fee_rate || 0.2,
+        created_at: authUser?.created_at,
+        last_sign_in_at: authUser?.last_sign_in_at,
+      }
 
       return {
         success: true,
         data: {
-          user: userData,
+          user,
           session: data.session,
         },
       }
@@ -61,7 +62,7 @@ export const authAPI = {
   },
 
   /**
-   * 회원가입
+   * 회원가입 - user_metadata에 추가 정보 저장
    */
   register: async (data: {
     email: string
@@ -70,26 +71,20 @@ export const authAPI = {
     phone?: string
   }) => {
     try {
-      // Supabase Auth에 사용자 생성
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
+        options: {
+          data: {
+            name: data.name,
+            role: 'user',
+            phone: data.phone || null,
+            fee_rate: 0.2,
+          }
+        }
       })
 
       if (authError) throw authError
-
-      // users 테이블에 추가 정보 저장
-      const { error: dbError } = await supabase.from('users').insert({
-        email: data.email,
-        name: data.name,
-        password_hash: '', // Supabase Auth가 관리하므로 빈 값
-        role: 'user',
-        phone: data.phone || null,
-        fee_rate: 0.2,
-        balance: 0,
-      })
-
-      if (dbError) throw dbError
 
       return { success: true, data: authData }
     } catch (error: any) {
@@ -114,49 +109,92 @@ export const authAPI = {
     const { error } = await supabase.auth.resetPasswordForEmail(email)
     return { success: !error, error: error?.message }
   },
-}
 
-// ==================== 사용자 ====================
-
-export const usersAPI = {
   /**
-   * 사용자 목록 조회 (관리자 전용)
+   * 현재 사용자 정보 가져오기
    */
-  getUsers: async () => {
-    console.log('🔧 [API] Fetching users from Supabase...');
+  getCurrentUser: async () => {
+    const { data: { user }, error } = await supabase.auth.getUser()
     
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    console.log('🔧 [API] Users query result:', { data, error });
-
-    if (error) {
-      console.error('🔧 [API] Users query error:', error);
-      return { success: false, error: error.message }
+    if (error || !user) {
+      return { success: false, error: error?.message || 'Not authenticated' }
     }
 
-    console.log('🔧 [API] Users fetched:', data?.length);
-    return { success: true, data }
+    const metadata = user.user_metadata || {}
+    
+    return {
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email || '',
+        name: metadata.name || user.email?.split('@')[0] || '',
+        role: metadata.role || 'user',
+        phone: metadata.phone || null,
+        fee_rate: metadata.fee_rate || 0.2,
+        created_at: user.created_at,
+        last_sign_in_at: user.last_sign_in_at,
+      } as User
+    }
   },
 
   /**
-   * 사용자 정보 수정
+   * 사용자 정보 업데이트 (user_metadata)
    */
-  updateUser: async (email: string, updates: Partial<User>) => {
-    const { data, error } = await supabase
-      .from('users')
-      .update(updates)
-      .eq('email', email)
-      .select()
-      .single()
+  updateProfile: async (updates: { name?: string; phone?: string; fee_rate?: number }) => {
+    const { data, error } = await supabase.auth.updateUser({
+      data: updates
+    })
 
     if (error) {
       return { success: false, error: error.message }
     }
 
     return { success: true, data }
+  },
+}
+
+// ==================== 사용자 (담당자 목록) ====================
+
+export const usersAPI = {
+  /**
+   * 담당자 목록 조회 - transactions에서 고유 manager 추출
+   * users 테이블 없이 거래 데이터에서 담당자 정보 추출
+   */
+  getUsers: async () => {
+    try {
+      // transactions 테이블에서 고유한 manager_email 목록 가져오기
+      const { data: transactions, error } = await supabase
+        .from('transactions')
+        .select('manager_name, manager_email')
+      
+      if (error) {
+        console.error('Failed to fetch managers:', error)
+        return { success: false, error: error.message }
+      }
+
+      // 중복 제거하여 고유 담당자 목록 생성
+      const uniqueManagers = new Map<string, { email: string; name: string }>()
+      
+      transactions?.forEach(t => {
+        if (t.manager_email && !uniqueManagers.has(t.manager_email)) {
+          uniqueManagers.set(t.manager_email, {
+            email: t.manager_email,
+            name: t.manager_name || t.manager_email.split('@')[0],
+          })
+        }
+      })
+
+      const users = Array.from(uniqueManagers.values()).map(m => ({
+        id: m.email, // email을 id로 사용
+        email: m.email,
+        name: m.name,
+        role: 'user' as const,
+      }))
+
+      return { success: true, data: users }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
   },
 }
 
@@ -191,9 +229,6 @@ export const transactionsAPI = {
    * 거래 추가
    */
   addTransaction: async (transaction: Partial<Transaction>) => {
-    console.log('🔧 [API] Adding transaction to Supabase...');
-    console.log('🔧 [API] Transaction data:', transaction);
-    
     // 수수료 계산
     const supply_amount = transaction.supply_amount || 0
     const fee_rate = transaction.fee_rate || 0.2
@@ -206,9 +241,7 @@ export const transactionsAPI = {
       fee_rate,
       fee_amount,
       deposit_amount,
-    };
-    
-    console.log('🔧 [API] Insert data prepared:', insertData);
+    }
 
     const { data, error } = await supabase
       .from('transactions')
@@ -216,19 +249,11 @@ export const transactionsAPI = {
       .select()
       .single()
 
-    console.log('🔧 [API] Insert result:', { data, error });
-
     if (error) {
-      console.error('🔧 [API] Insert error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
+      console.error('Transaction insert error:', error)
       return { success: false, error: error.message }
     }
 
-    console.log('🔧 [API] Transaction added successfully');
     return { success: true, data }
   },
 
@@ -286,7 +311,7 @@ export const mappingsAPI = {
    * 매핑 추가
    */
   addMapping: async (mapping: { vendor_name: string; manager_name: string; manager_email: string }) => {
-    const { data, error} = await supabase
+    const { data, error } = await supabase
       .from('mappings')
       .insert(mapping)
       .select()

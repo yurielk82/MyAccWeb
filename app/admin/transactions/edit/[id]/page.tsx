@@ -92,8 +92,16 @@ export default function EditTransactionPage() {
     setLoading(true);
 
     try {
+      // 선택된 담당자 정보 찾기
+      const selectedUser = users.find(u => u.email === formData.manager_email);
+      if (!selectedUser) {
+        alert("담당자 정보를 찾을 수 없습니다.");
+        return;
+      }
+
       const response = await transactionsAPI.updateTransaction(transactionId, {
         date: formData.date,
+        manager_name: selectedUser.name,
         manager_email: formData.manager_email,
         type: formData.type as '세금계산서' | '입금' | '출금',
         description: formData.description,
@@ -184,7 +192,7 @@ export default function EditTransactionPage() {
                   required
                 >
                   <option value="">선택해주세요</option>
-                  {users.map((u) => (
+                  {users.filter(u => u.role !== 'admin').map((u) => (
                     <option key={u.email} value={u.email}>
                       {u.name} ({u.email})
                     </option>

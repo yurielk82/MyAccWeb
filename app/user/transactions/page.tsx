@@ -50,7 +50,7 @@ export default function UserTransactionsPage() {
     try {
       const response = await transactionsAPI.getTransactions(user.email, "user");
       if (response.success && response.data) {
-        const userTransactions = response.data.filter(
+        const userTransactions = (response.data as Transaction[]).filter(
           (t) => t.manager_email === user.email
         );
         setTransactions(userTransactions);

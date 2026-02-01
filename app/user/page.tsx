@@ -29,7 +29,7 @@ export default function UserDashboard() {
     try {
       const response = await transactionsAPI.getTransactions(user.email, "user");
       if (response.success && response.data) {
-        const userTransactions = response.data.filter(
+        const userTransactions = (response.data as Transaction[]).filter(
           (t) => t.manager_email === user.email
         );
         setTransactions(userTransactions.slice(0, 10)); // 최근 10개

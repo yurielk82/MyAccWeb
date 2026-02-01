@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { authAPI } from "@/lib/supabase/api";
 import { useAuthStore } from "@/lib/store/auth";
 import { isValidEmail } from "@/lib/utils";
+import type { User } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,10 +41,11 @@ export default function LoginPage() {
       const response = await authAPI.login(email, password);
 
       if (response.success && response.data) {
-        login(response.data.user);
+        const userData = response.data.user as User;
+        login(userData);
         
         // 역할에 따라 리다이렉트
-        if (response.data.user.role === "admin") {
+        if (userData.role === "admin") {
           router.push("/admin");
         } else {
           router.push("/user");

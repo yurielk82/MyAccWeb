@@ -125,7 +125,7 @@ export default function AdminTransactionsPage() {
     if (!confirm("이 거래를 삭제하시겠습니까?")) return;
 
     try {
-      const response = await transactionsAPI.deleteTransaction(id, user?.email);
+      const response = await transactionsAPI.deleteTransaction(id);
       if (response.success) {
         alert("거래가 삭제되었습니다.");
         loadData();

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { calculateFee, formatCurrency } from "@/lib/utils";
-import type { User, TransactionType } from "@/lib/supabase/client";
+import type { User } from "@/lib/supabase/client";
 
 export default function AddTransactionPage() {
   const router = useRouter();
@@ -19,7 +19,7 @@ export default function AddTransactionPage() {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     manager_email: "",
-    type: "세금계산서" as TransactionType,
+    type: "세금계산서",
     description: "",
     memo: "",
     total_amount: "", // 세금계산서: 총액 입력
@@ -78,13 +78,12 @@ export default function AddTransactionPage() {
       const response = await transactionsAPI.addTransaction({
         date: formData.date,
         manager_email: formData.manager_email,
-        type: formData.type,
+        type: formData.type as '세금계산서' | '입금' | '출금',
         description: formData.description,
         memo: formData.memo || undefined,
-        supplyAmount,
+        supply_amount,
         vat: vat > 0 ? vat : undefined,
-        fee_rate: feeRate > 0 ? feeRate : undefined,
-        requestUserEmail: user?.email, // 권한 확인용
+        fee_rate: fee_rate > 0 ? fee_rate : undefined,
       });
 
       if (response.success) {
@@ -102,24 +101,24 @@ export default function AddTransactionPage() {
   };
 
   // 계산 결과
-  const feeRate = parseFloat(formData.fee_rate) || 0;
+  const fee_rate = parseFloat(formData.fee_rate) || 0;
   
   let vat = 0;
-  let supplyAmount = 0;
-  let feeAmount = 0;
-  let depositAmount = 0;
+  let supply_amount = 0;
+  let fee_amount = 0;
+  let deposit_amount = 0;
   let withdrawalAmount = 0;
 
   if (formData.type === "세금계산서") {
     // 세금계산서: 총액 입력 → 부가세(10%) 계산 → 공급가액 계산 → 수수료 계산 → 입금액 계산
-    const totalAmount = parseFloat(formData.total_amount) || 0;
-    vat = Math.round(totalAmount / 11); // 부가세 10%
-    supplyAmount = totalAmount - vat; // 공급가액
-    feeAmount = Math.round(supplyAmount * (feeRate / 100)); // 수수료
-    depositAmount = supplyAmount - feeAmount; // 최종 입금액
+    const total_amount = parseFloat(formData.total_amount) || 0;
+    vat = Math.round(total_amount / 11); // 부가세 10%
+    supply_amount = total_amount - vat; // 공급가액
+    fee_amount = Math.round(supply_amount * (fee_rate / 100)); // 수수료
+    deposit_amount = supply_amount - fee_amount; // 최종 입금액
   } else if (formData.type === "입금") {
     // 입금: 금액 그대로
-    depositAmount = parseFloat(formData.amount) || 0;
+    deposit_amount = parseFloat(formData.amount) || 0;
   } else if (formData.type === "출금") {
     // 출금: 금액 그대로
     withdrawalAmount = parseFloat(formData.amount) || 0;
@@ -233,14 +232,14 @@ export default function AddTransactionPage() {
                 <>
                   <div>
                     <label
-                      htmlFor="totalAmount"
+                      htmlFor="total_amount"
                       className="text-sm font-medium text-gray-700 mb-1 block"
                     >
                       💰 총액 (공급가액+부가세) <span className="text-danger">*</span>
                     </label>
                     <Input
-                      id="totalAmount"
-                      name="totalAmount"
+                      id="total_amount"
+                      name="total_amount"
                       type="number"
                       placeholder="11000000"
                       value={formData.total_amount}
@@ -256,14 +255,14 @@ export default function AddTransactionPage() {
 
                   <div>
                     <label
-                      htmlFor="feeRate"
+                      htmlFor="fee_rate"
                       className="text-sm font-medium text-gray-700 mb-1 block"
                     >
                       📊 수수료율 (%)
                     </label>
                     <Input
-                      id="feeRate"
-                      name="feeRate"
+                      id="fee_rate"
+                      name="fee_rate"
                       type="number"
                       placeholder="20"
                       value={formData.fee_rate}
@@ -359,7 +358,7 @@ export default function AddTransactionPage() {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-700">공급가액</span>
                     <span className="font-medium">
-                      {formatCurrency(supplyAmount)}원
+                      {formatCurrency(supply_amount)}원
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -369,15 +368,15 @@ export default function AddTransactionPage() {
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-700">수수료 ({feeRate}%)</span>
+                    <span className="text-gray-700">수수료 ({fee_rate}%)</span>
                     <span className="font-semibold text-danger">
-                      -{formatCurrency(feeAmount)}원
+                      -{formatCurrency(fee_amount)}원
                     </span>
                   </div>
                   <hr className="my-2" />
                   <div className="flex justify-between text-base font-bold">
                     <span>최종 입금액</span>
-                    <span className="text-success">+{formatCurrency(depositAmount)}원</span>
+                    <span className="text-success">+{formatCurrency(deposit_amount)}원</span>
                   </div>
                 </div>
               </CardContent>
@@ -391,7 +390,7 @@ export default function AddTransactionPage() {
                   <p className="text-sm font-semibold text-green-600 mb-3">💡 입금 금액</p>
                   <div className="flex justify-between text-base font-bold">
                     <span>입금액</span>
-                    <span className="text-success">+{formatCurrency(depositAmount)}원</span>
+                    <span className="text-success">+{formatCurrency(deposit_amount)}원</span>
                   </div>
                 </div>
               </CardContent>

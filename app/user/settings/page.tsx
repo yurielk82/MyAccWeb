@@ -36,11 +36,7 @@ export default function UserSettingsPage() {
 
     setChangingPassword(true);
     try {
-      const response = await authAPI.changePassword(
-        user!.email,
-        passwordForm.oldPassword,
-        passwordForm.newPassword
-      );
+      const response = await authAPI.changePassword(passwordForm.newPassword);
 
       if (response.success) {
         alert("비밀번호가 변경되었습니다.");

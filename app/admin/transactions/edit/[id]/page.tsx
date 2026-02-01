@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { calculateFee, formatCurrency } from "@/lib/utils";
-import type { User, TransactionType, Transaction } from "@/lib/supabase/client";
+import type { User, Transaction } from "@/lib/supabase/client";
 
 export default function EditTransactionPage() {
   const router = useRouter();
@@ -22,7 +22,7 @@ export default function EditTransactionPage() {
   const [formData, setFormData] = useState({
     date: "",
     manager_email: "",
-    type: "입금" as TransactionType,
+    type: "입금" ,
     description: "",
     memo: "",
     supply_amount: "",
@@ -47,7 +47,7 @@ export default function EditTransactionPage() {
       }
 
       if (transactionsRes.success && transactionsRes.data) {
-        const transaction = transactionsRes.data.find((t) => t.id === transactionId);
+        const transaction = (transactionsRes.data as Transaction[]).find((t) => t.id === transactionId);
         if (transaction) {
           setFormData({
             date: transaction.date.split("T")[0],
@@ -83,8 +83,8 @@ export default function EditTransactionPage() {
       return;
     }
 
-    const supplyAmount = parseFloat(formData.supply_amount);
-    if (isNaN(supplyAmount) || supplyAmount <= 0) {
+    const supply_amount = parseFloat(formData.supply_amount);
+    if (isNaN(supply_amount) || supply_amount <= 0) {
       alert("올바른 금액을 입력해주세요.");
       return;
     }
@@ -92,17 +92,15 @@ export default function EditTransactionPage() {
     setLoading(true);
 
     try {
-      const response = await transactionsAPI.updateTransaction({
-        id: transactionId,
+      const response = await transactionsAPI.updateTransaction(transactionId, {
         date: formData.date,
         manager_email: formData.manager_email,
-        type: formData.type,
+        type: formData.type as '세금계산서' | '입금' | '출금',
         description: formData.description,
         memo: formData.memo || undefined,
-        supplyAmount,
+        supply_amount,
         vat: formData.vat ? parseFloat(formData.vat) : undefined,
         fee_rate: formData.fee_rate ? parseFloat(formData.fee_rate) : undefined,
-        requestUserEmail: user?.email, // 권한 확인용
       });
 
       if (response.success) {
@@ -120,10 +118,10 @@ export default function EditTransactionPage() {
   };
 
   // 계산 결과
-  const supplyAmount = parseFloat(formData.supply_amount) || 0;
-  const feeRate = parseFloat(formData.fee_rate) || 0;
-  const feeAmount = formData.type === "입금" ? calculateFee(supplyAmount, feeRate) : 0;
-  const depositAmount = formData.type === "입금" ? supplyAmount - feeAmount : 0;
+  const supply_amount = parseFloat(formData.supply_amount) || 0;
+  const fee_rate = parseFloat(formData.fee_rate) || 0;
+  const fee_amount = formData.type === "입금" ? calculateFee(supply_amount, fee_rate) : 0;
+  const deposit_amount = formData.type === "입금" ? supply_amount - fee_amount : 0;
 
   if (loadingData) {
     return (
@@ -239,14 +237,14 @@ export default function EditTransactionPage() {
               {/* 공급가액 */}
               <div>
                 <label
-                  htmlFor="supplyAmount"
+                  htmlFor="supply_amount"
                   className="text-sm font-medium text-gray-700 mb-1 block"
                 >
                   💰 공급가액 (원) <span className="text-danger">*</span>
                 </label>
                 <Input
-                  id="supplyAmount"
-                  name="supplyAmount"
+                  id="supply_amount"
+                  name="supply_amount"
                   type="number"
                   placeholder="1000000"
                   value={formData.supply_amount}
@@ -280,14 +278,14 @@ export default function EditTransactionPage() {
               {formData.type === "입금" && (
                 <div>
                   <label
-                    htmlFor="feeRate"
+                    htmlFor="fee_rate"
                     className="text-sm font-medium text-gray-700 mb-1 block"
                   >
                     📊 수수료율 (%)
                   </label>
                   <Input
-                    id="feeRate"
-                    name="feeRate"
+                    id="fee_rate"
+                    name="fee_rate"
                     type="number"
                     placeholder="20"
                     value={formData.fee_rate}
@@ -345,20 +343,20 @@ export default function EditTransactionPage() {
           </Card>
 
           {/* 계산 결과 (입금인 경우) */}
-          {formData.type === "입금" && supplyAmount > 0 && (
+          {formData.type === "입금" && supply_amount > 0 && (
             <Card className="bg-primary-50 border-primary">
               <CardContent className="pt-6">
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-primary mb-3">💡 계산 결과</p>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-700">수수료 ({feeRate}%)</span>
+                    <span className="text-gray-700">수수료 ({fee_rate}%)</span>
                     <span className="font-semibold text-danger">
-                      -{formatCurrency(feeAmount)}원
+                      -{formatCurrency(fee_amount)}원
                     </span>
                   </div>
                   <div className="flex justify-between text-base font-bold">
                     <span>입금액</span>
-                    <span className="text-success">{formatCurrency(depositAmount)}원</span>
+                    <span className="text-success">{formatCurrency(deposit_amount)}원</span>
                   </div>
                 </div>
               </CardContent>

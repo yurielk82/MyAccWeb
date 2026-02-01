@@ -13,7 +13,7 @@ interface ManagerBalance {
   manager_email: string;
   manager_name: string;
   balance: number;
-  transactionCount: number;
+  transaction_count: number;
   lastTransactionDate: string;
 }
 
@@ -56,7 +56,7 @@ export default function ManagerBalancesPage() {
               manager_email: u.email,
               manager_name: u.name,
               balance: latest.balance || 0,
-              transactionCount: managerTransactions.length,
+              transaction_count: managerTransactions.length,
               lastTransactionDate: latest.date,
             });
           } else {
@@ -64,7 +64,7 @@ export default function ManagerBalancesPage() {
               manager_email: u.email,
               manager_name: u.name,
               balance: 0,
-              transactionCount: 0,
+              transaction_count: 0,
               lastTransactionDate: "",
             });
           }
@@ -138,7 +138,7 @@ export default function ManagerBalancesPage() {
                       <p className="font-medium text-lg">{balance.manager_name}</p>
                       <p className="text-sm text-gray-500">{balance.manager_email}</p>
                       <div className="flex gap-4 mt-2 text-xs text-gray-600">
-                        <span>거래 {balance.transactionCount}건</span>
+                        <span>거래 {balance.transaction_count}건</span>
                         {balance.lastTransactionDate && (
                           <span>
                             최근:{" "}

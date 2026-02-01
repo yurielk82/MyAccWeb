@@ -49,17 +49,17 @@ export function getTransactionTypeColor(type: string): string {
   return colors[type] || "text-gray-500";
 }
 
-// 수수료 계산
-export function calculateFee(supplyAmount: number, feeRate: number): number {
-  return Math.round(supplyAmount * (feeRate / 100));
+// 수수료 계산 - snake_case 파라미터
+export function calculateFee(supply_amount: number, fee_rate: number): number {
+  return Math.round(supply_amount * (fee_rate / 100));
 }
 
-// 입금액 계산
+// 입금액 계산 - snake_case 파라미터
 export function calculateDepositAmount(
-  supplyAmount: number,
-  feeAmount: number
+  supply_amount: number,
+  fee_amount: number
 ): number {
-  return supplyAmount - feeAmount;
+  return supply_amount - fee_amount;
 }
 
 // 이메일 유효성 검사

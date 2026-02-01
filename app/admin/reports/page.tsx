@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { transactionsAPI } from "@/lib/supabase/api";
+import type { Transaction } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
@@ -68,19 +69,19 @@ export default function AdminReportsPage() {
       );
 
       if (response.success && response.data && Array.isArray(response.data)) {
-        const transactions = response.data;
+        const transactions: Transaction[] = response.data as Transaction[];
 
         if (activeTab === "monthly") {
           // 월별 리포트 계산
-          const monthlyMap = new Map<string, { totalFee: number; count: number }>();
+          const monthlyMap = new Map<string, { total_fee: number; count: number }>();
           transactions.forEach((t) => {
             const date = new Date(t.date);
             if (date.getFullYear() === year) {
               const month = date.getMonth() + 1;
               const key = `${month}월`;
-              const current = monthlyMap.get(key) || { totalFee: 0, count: 0 };
+              const current = monthlyMap.get(key) || { total_fee: 0, count: 0 };
               monthlyMap.set(key, {
-                totalFee: current.totalFee + (t.fee_amount || 0),
+                total_fee: current.total_fee + (t.fee_amount || 0),
                 count: current.count + 1,
               });
             }
@@ -89,24 +90,23 @@ export default function AdminReportsPage() {
           const monthlyResult: MonthlyReport[] = Array.from({ length: 12 }, (_, i) => {
             const month = i + 1;
             const key = `${month}월`;
-            const data = monthlyMap.get(key) || { totalFee: 0, count: 0 };
+            const data = monthlyMap.get(key) || { total_fee: 0, count: 0 };
             return {
-              month,
-              year,
-              totalFee: data.totalFee,
-              transactionCount: data.count,
+              month: key,
+              total_fee: data.total_fee,
+              transaction_count: data.count,
             };
           });
           setMonthlyData(monthlyResult);
         } else if (activeTab === "yearly") {
           // 연별 리포트 계산
-          const yearlyMap = new Map<number, { totalFee: number; count: number }>();
+          const yearlyMap = new Map<number, { total_fee: number; count: number }>();
           transactions.forEach((t) => {
             const date = new Date(t.date);
             const txYear = date.getFullYear();
-            const current = yearlyMap.get(txYear) || { totalFee: 0, count: 0 };
+            const current = yearlyMap.get(txYear) || { total_fee: 0, count: 0 };
             yearlyMap.set(txYear, {
-              totalFee: current.totalFee + (t.fee_amount || 0),
+              total_fee: current.total_fee + (t.fee_amount || 0),
               count: current.count + 1,
             });
           });
@@ -114,24 +114,24 @@ export default function AdminReportsPage() {
           const yearlyResult: YearlyReport[] = Array.from(yearlyMap.entries())
             .map(([y, data]) => ({
               year: y,
-              totalFee: data.totalFee,
-              transactionCount: data.count,
+              total_fee: data.total_fee,
+              transaction_count: data.count,
             }))
             .sort((a, b) => b.year - a.year);
           setYearlyData(yearlyResult);
         } else if (activeTab === "manager") {
           // 담당자별 리포트 계산
-          const managerMap = new Map<string, { name: string; totalFee: number; count: number }>();
+          const managerMap = new Map<string, { name: string; total_fee: number; count: number }>();
           transactions.forEach((t) => {
             const email = t.manager_email;
             const current = managerMap.get(email) || {
               name: t.manager_name || email,
-              totalFee: 0,
+              total_fee: 0,
               count: 0,
             };
             managerMap.set(email, {
               name: current.name,
-              totalFee: current.totalFee + (t.fee_amount || 0),
+              total_fee: current.total_fee + (t.fee_amount || 0),
               count: current.count + 1,
             });
           });
@@ -140,10 +140,10 @@ export default function AdminReportsPage() {
             .map(([email, data]) => ({
               manager_email: email,
               manager_name: data.name,
-              totalFee: data.totalFee,
-              transactionCount: data.count,
+              total_fee: data.total_fee,
+              transaction_count: data.count,
             }))
-            .sort((a, b) => b.totalFee - a.totalFee);
+            .sort((a, b) => b.total_fee - a.total_fee);
           setManagerData(managerResult);
         }
       }
@@ -243,12 +243,12 @@ export default function AdminReportsPage() {
                     <p className="text-sm text-gray-600">💰 연간 총 수수료</p>
                     <p className="text-3xl font-bold text-gray-900 mt-2">
                       {formatCurrency(
-                        monthlyData.reduce((sum, m) => sum + m.totalFee, 0)
+                        monthlyData.reduce((sum, m) => sum + m.total_fee, 0)
                       )}
                       원
                     </p>
                     <p className="text-sm text-gray-500 mt-1">
-                      총 {monthlyData.reduce((sum, m) => sum + m.transactionCount, 0)}건
+                      총 {monthlyData.reduce((sum, m) => sum + m.transaction_count, 0)}건
                     </p>
                   </CardContent>
                 </Card>
@@ -270,7 +270,7 @@ export default function AdminReportsPage() {
                           />
                           <Line
                             type="monotone"
-                            dataKey="totalFee"
+                            dataKey="total_fee"
                             stroke="#3B82F6"
                             strokeWidth={2}
                             name="수수료"
@@ -299,11 +299,11 @@ export default function AdminReportsPage() {
                             <div>
                               <p className="font-medium">{item.month}월</p>
                               <p className="text-xs text-gray-500">
-                                ({item.transactionCount}건)
+                                ({item.transaction_count}건)
                               </p>
                             </div>
                             <p className="font-bold text-primary">
-                              {formatCurrency(item.totalFee)}원
+                              {formatCurrency(item.total_fee)}원
                             </p>
                           </div>
                         ))}
@@ -332,7 +332,7 @@ export default function AdminReportsPage() {
                           <Tooltip
                             formatter={(value: number) => formatCurrency(value) + "원"}
                           />
-                          <Bar dataKey="totalFee" fill="#3B82F6" name="수수료" />
+                          <Bar dataKey="total_fee" fill="#3B82F6" name="수수료" />
                         </BarChart>
                       </ResponsiveContainer>
                     </CardContent>
@@ -357,11 +357,11 @@ export default function AdminReportsPage() {
                             <div>
                               <p className="text-lg font-bold">{item.year}년</p>
                               <p className="text-sm text-gray-500">
-                                ({item.transactionCount}건)
+                                ({item.transaction_count}건)
                               </p>
                             </div>
                             <p className="text-xl font-bold text-primary">
-                              {formatCurrency(item.totalFee)}원
+                              {formatCurrency(item.total_fee)}원
                             </p>
                           </div>
                         ))}
@@ -386,8 +386,8 @@ export default function AdminReportsPage() {
                         <PieChart>
                           <Pie
                             data={managerData}
-                            dataKey="totalFee"
-                            nameKey="managerName"
+                            dataKey="total_fee"
+                            nameKey="manager_name"
                             cx="50%"
                             cy="50%"
                             outerRadius={80}
@@ -432,12 +432,12 @@ export default function AdminReportsPage() {
                               <div>
                                 <p className="font-medium">{item.manager_name}</p>
                                 <p className="text-xs text-gray-500">
-                                  ({item.transactionCount}건)
+                                  ({item.transaction_count}건)
                                 </p>
                               </div>
                             </div>
                             <p className="font-bold text-primary">
-                              {formatCurrency(item.totalFee)}원
+                              {formatCurrency(item.total_fee)}원
                             </p>
                           </div>
                         ))}

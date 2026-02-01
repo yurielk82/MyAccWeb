@@ -5,7 +5,7 @@
  */
 
 import { supabase } from './client'
-import type { User, Transaction, Mapping, Setting } from './client'
+import type { User, Transaction, Mapping, Setting, InsertTransaction, InsertUser, InsertMapping } from './client'
 
 // ==================== 인증 ====================
 
@@ -34,7 +34,7 @@ export const authAPI = {
       // last_login 업데이트
       await supabase
         .from('users')
-        .update({ last_login: new Date().toISOString() })
+        .update({ last_login: new Date().toISOString() } as any)
         .eq('email', email)
 
       return {
@@ -79,17 +79,15 @@ export const authAPI = {
       if (authError) throw authError
 
       // users 테이블에 추가 정보 저장
-      const { error: dbError } = await supabase.from('users').insert([
-        {
-          email: data.email,
-          name: data.name,
-          password_hash: '', // Supabase Auth가 관리하므로 빈 값
-          role: 'user',
-          phone: data.phone || null,
-          fee_rate: 0.2,
-          balance: 0,
-        },
-      ])
+      const { error: dbError } = await supabase.from('users').insert({
+        email: data.email,
+        name: data.name,
+        password_hash: '', // Supabase Auth가 관리하므로 빈 값
+        role: 'user',
+        phone: data.phone || null,
+        fee_rate: 0.2,
+        balance: 0,
+      })
 
       if (dbError) throw dbError
 
@@ -188,22 +186,20 @@ export const transactionsAPI = {
    */
   addTransaction: async (transaction: Partial<Transaction>) => {
     // 수수료 계산
-    const supplyAmount = transaction.supply_amount || 0
-    const feeRate = transaction.fee_rate || 0.2
-    const feeAmount = Math.round(supplyAmount * feeRate)
-    const depositAmount = supplyAmount - feeAmount
+    const supply_amount = transaction.supply_amount || 0
+    const fee_rate = transaction.fee_rate || 0.2
+    const fee_amount = Math.round(supply_amount * fee_rate)
+    const deposit_amount = supply_amount - fee_amount
 
     const { data, error } = await supabase
       .from('transactions')
-      .insert([
-        {
-          ...transaction,
-          supply_amount: supplyAmount,
-          fee_rate: feeRate,
-          fee_amount: feeAmount,
-          deposit_amount: depositAmount,
-        } as any,
-      ])
+      .insert({
+        ...transaction,
+        supply_amount,
+        fee_rate,
+        fee_amount,
+        deposit_amount,
+      })
       .select()
       .single()
 
@@ -217,10 +213,10 @@ export const transactionsAPI = {
   /**
    * 거래 수정
    */
-  updateTransaction: async (id: string, updates: Partial<Transaction>) => {
+  updateTransaction: async (id: string, transaction: Partial<Transaction>) => {
     const { data, error } = await supabase
       .from('transactions')
-      .update(updates)
+      .update(transaction)
       .eq('id', id)
       .select()
       .single()
@@ -236,13 +232,12 @@ export const transactionsAPI = {
    * 거래 삭제
    */
   deleteTransaction: async (id: string) => {
-    const { error } = await supabase.from('transactions').delete().eq('id', id)
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', id)
 
-    if (error) {
-      return { success: false, error: error.message }
-    }
-
-    return { success: true }
+    return { success: !error, error: error?.message }
   },
 }
 
@@ -268,14 +263,10 @@ export const mappingsAPI = {
   /**
    * 매핑 추가
    */
-  addMapping: async (mapping: {
-    vendor_name: string
-    manager_name: string
-    manager_email: string
-  }) => {
-    const { data, error } = await supabase
+  addMapping: async (mapping: { vendor_name: string; manager_name: string; manager_email: string }) => {
+    const { data, error} = await supabase
       .from('mappings')
-      .insert([mapping])
+      .insert(mapping)
       .select()
       .single()
 
@@ -290,13 +281,12 @@ export const mappingsAPI = {
    * 매핑 삭제
    */
   deleteMapping: async (id: string) => {
-    const { error } = await supabase.from('mappings').delete().eq('id', id)
+    const { error } = await supabase
+      .from('mappings')
+      .delete()
+      .eq('id', id)
 
-    if (error) {
-      return { success: false, error: error.message }
-    }
-
-    return { success: true }
+    return { success: !error, error: error?.message }
   },
 }
 
@@ -304,71 +294,33 @@ export const mappingsAPI = {
 
 export const settingsAPI = {
   /**
-   * 설정 조회
+   * 설정 목록 조회
    */
   getSettings: async () => {
-    const { data, error } = await supabase.from('settings').select('*')
+    const { data, error } = await supabase
+      .from('settings')
+      .select('*')
 
     if (error) {
       return { success: false, error: error.message }
     }
 
-    // 객체 형태로 변환
-    const settings: Record<string, string> = {}
-    data.forEach((setting) => {
-      settings[setting.key] = setting.value
-    })
-
-    return { success: true, data: settings }
+    return { success: true, data }
   },
 
   /**
-   * 설정 업데이트
+   * 설정 수정
    */
   updateSetting: async (key: string, value: string) => {
     const { data, error } = await supabase
       .from('settings')
-      .update({ value, updated_at: new Date().toISOString() })
+      .update({ 
+        value, 
+        updated_at: new Date().toISOString() 
+      })
       .eq('key', key)
       .select()
       .single()
-
-    if (error) {
-      return { success: false, error: error.message }
-    }
-
-    return { success: true, data }
-  },
-}
-
-// ==================== 리포트 ====================
-
-export const reportsAPI = {
-  /**
-   * 월별 수수료 리포트
-   */
-  getMonthlyReport: async (year: number) => {
-    const { data, error } = await supabase
-      .from('monthly_fee_summary')
-      .select('*')
-      .gte('month', `${year}-01-01`)
-      .lte('month', `${year}-12-31`)
-
-    if (error) {
-      return { success: false, error: error.message }
-    }
-
-    return { success: true, data }
-  },
-
-  /**
-   * 담당자별 잔액
-   */
-  getManagerBalances: async () => {
-    const { data, error } = await supabase
-      .from('manager_balances')
-      .select('*')
-      .order('latest_transaction_balance', { ascending: false })
 
     if (error) {
       return { success: false, error: error.message }

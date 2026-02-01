@@ -7,13 +7,13 @@ import { authAPI, usersAPI, settingsAPI } from "@/lib/supabase/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import type { User, Settings } from "@/lib/supabase/client";
+import type { User, Setting } from "@/lib/supabase/client";
 
 export default function AdminSettingsPage() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const [settings, setSettings] = useState<Setting[]>([]);
   const [loading, setLoading] = useState(true);
 
   // 비밀번호 변경
@@ -66,11 +66,7 @@ export default function AdminSettingsPage() {
 
     setChangingPassword(true);
     try {
-      const response = await authAPI.changePassword(
-        user!.email,
-        passwordForm.oldPassword,
-        passwordForm.newPassword
-      );
+      const response = await authAPI.changePassword(passwordForm.newPassword);
 
       if (response.success) {
         alert("비밀번호가 변경되었습니다.");
@@ -150,7 +146,7 @@ export default function AdminSettingsPage() {
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-sm text-gray-500">기본 수수료율</p>
-                    <p className="font-medium">{settings?.defaultFeeRate || 20}%</p>
+                    <p className="font-medium">{settings.find(s => s.key === 'default_fee_rate')?.value || 20}%</p>
                   </div>
                 </div>
               </CardContent>

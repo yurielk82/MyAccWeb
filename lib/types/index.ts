@@ -104,7 +104,8 @@ export interface AddTransactionRequest {
   date: string;
   managerEmail: string;
   type: TransactionType;
-  description?: string;
+  description: string;
+  memo?: string;
   supplyAmount: number;
   vat?: number;
   feeRate?: number;

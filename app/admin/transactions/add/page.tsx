@@ -21,6 +21,7 @@ export default function AddTransactionPage() {
     managerEmail: "",
     type: "세금계산서" as TransactionType,
     description: "",
+    memo: "",
     totalAmount: "", // 세금계산서: 총액 입력
     amount: "", // 입금/출금: 금액 입력
     feeRate: "20",
@@ -79,6 +80,7 @@ export default function AddTransactionPage() {
         managerEmail: formData.managerEmail,
         type: formData.type,
         description: formData.description,
+        memo: formData.memo || undefined,
         supplyAmount,
         vat: vat > 0 ? vat : undefined,
         feeRate: feeRate > 0 ? feeRate : undefined,
@@ -296,23 +298,47 @@ export default function AddTransactionPage() {
                 </div>
               )}
 
-              {/* 메모 */}
+              {/* 적요 */}
               <div>
                 <label
                   htmlFor="description"
                   className="text-sm font-medium text-gray-700 mb-1 block"
                 >
-                  📄 메모 <span className="text-danger">*</span>
+                  📝 적요 <span className="text-danger">*</span>
                 </label>
-                <textarea
+                <Input
                   id="description"
                   name="description"
-                  className="w-full h-20 rounded-lg border border-gray-300 px-4 py-2 text-base resize-none"
-                  placeholder="메모를 입력하세요 (필수)"
+                  type="text"
+                  placeholder="간단한 거래 내용 (예: OO상사 세금계산서)"
                   value={formData.description}
                   onChange={handleChange}
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  거래내역 목록에 표시될 간단한 설명
+                </p>
+              </div>
+
+              {/* 메모 */}
+              <div>
+                <label
+                  htmlFor="memo"
+                  className="text-sm font-medium text-gray-700 mb-1 block"
+                >
+                  📄 메모 (선택)
+                </label>
+                <textarea
+                  id="memo"
+                  name="memo"
+                  className="w-full h-20 rounded-lg border border-gray-300 px-4 py-2 text-base resize-none"
+                  placeholder="상세 내용 입력 (선택사항)"
+                  value={formData.memo}
+                  onChange={handleChange}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  추가적인 상세 정보 (거래내역에 표시 안됨)
+                </p>
               </div>
             </CardContent>
           </Card>

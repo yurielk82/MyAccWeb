@@ -295,6 +295,11 @@ export default function AdminTransactionsPage() {
                                   💬 {transaction.description}
                                 </p>
                               )}
+                              {transaction.memo && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  📄 {transaction.memo}
+                                </p>
+                              )}
                             </div>
                             <div className="flex gap-2">
                               <Button

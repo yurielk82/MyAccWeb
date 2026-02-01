@@ -24,6 +24,7 @@ export default function EditTransactionPage() {
     managerEmail: "",
     type: "입금" as TransactionType,
     description: "",
+    memo: "",
     supplyAmount: "",
     vat: "",
     feeRate: "20",
@@ -53,6 +54,7 @@ export default function EditTransactionPage() {
             managerEmail: transaction.managerEmail,
             type: transaction.type,
             description: transaction.description || "",
+            memo: transaction.memo || "",
             supplyAmount: transaction.supplyAmount.toString(),
             vat: transaction.vat?.toString() || "",
             feeRate: transaction.feeRate?.toString() || "20",
@@ -95,7 +97,8 @@ export default function EditTransactionPage() {
         date: formData.date,
         managerEmail: formData.managerEmail,
         type: formData.type,
-        description: formData.description || undefined,
+        description: formData.description,
+        memo: formData.memo || undefined,
         supplyAmount,
         vat: formData.vat ? parseFloat(formData.vat) : undefined,
         feeRate: formData.feeRate ? parseFloat(formData.feeRate) : undefined,
@@ -295,22 +298,47 @@ export default function EditTransactionPage() {
                 </div>
               )}
 
-              {/* 메모 */}
+              {/* 적요 */}
               <div>
                 <label
                   htmlFor="description"
                   className="text-sm font-medium text-gray-700 mb-1 block"
                 >
+                  📝 적요 <span className="text-danger">*</span>
+                </label>
+                <Input
+                  id="description"
+                  name="description"
+                  type="text"
+                  placeholder="간단한 거래 내용 (예: OO상사 세금계산서)"
+                  value={formData.description}
+                  onChange={handleChange}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  거래내역 목록에 표시될 간단한 설명
+                </p>
+              </div>
+
+              {/* 메모 */}
+              <div>
+                <label
+                  htmlFor="memo"
+                  className="text-sm font-medium text-gray-700 mb-1 block"
+                >
                   📄 메모 (선택)
                 </label>
                 <textarea
-                  id="description"
-                  name="description"
+                  id="memo"
+                  name="memo"
                   className="w-full h-20 rounded-lg border border-gray-300 px-4 py-2 text-base resize-none"
-                  placeholder="메모를 입력하세요"
-                  value={formData.description}
+                  placeholder="상세 내용 입력 (선택사항)"
+                  value={formData.memo}
                   onChange={handleChange}
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  추가적인 상세 정보 (거래내역에 표시됨)
+                </p>
               </div>
             </CardContent>
           </Card>

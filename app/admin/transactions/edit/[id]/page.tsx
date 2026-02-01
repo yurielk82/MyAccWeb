@@ -178,14 +178,14 @@ export default function EditTransactionPage() {
               {/* 담당자 */}
               <div>
                 <label
-                  htmlFor="managerEmail"
+                  htmlFor="manager_email"
                   className="text-sm font-medium text-gray-700 mb-1 block"
                 >
                   👤 담당자 <span className="text-danger">*</span>
                 </label>
                 <select
-                  id="managerEmail"
-                  name="managerEmail"
+                  id="manager_email"
+                  name="manager_email"
                   className="w-full h-12 rounded-lg border border-gray-300 px-4 text-base"
                   value={formData.manager_email}
                   onChange={handleChange}

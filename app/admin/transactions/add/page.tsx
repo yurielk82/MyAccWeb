@@ -199,11 +199,20 @@ export default function AddTransactionPage() {
                   required
                 >
                   <option value="">선택해주세요</option>
-                  {users.map((u) => (
-                    <option key={u.email} value={u.email}>
-                      {u.name} ({u.email})
-                    </option>
-                  ))}
+                  {/* 최근 거래일 기준 정렬: last_transaction_date가 있는 사용자 우선 */}
+                  {users
+                    .slice() // 원본 배열 유지
+                    .sort((a, b) => {
+                      // last_transaction_date가 있는 사용자 우선
+                      const dateA = a.last_transaction_date ? new Date(a.last_transaction_date).getTime() : 0;
+                      const dateB = b.last_transaction_date ? new Date(b.last_transaction_date).getTime() : 0;
+                      return dateB - dateA; // 최신 거래일 순으로 정렬
+                    })
+                    .map((u) => (
+                      <option key={u.email} value={u.email}>
+                        {u.name} ({u.email}){u.last_transaction_date ? ` - 최근: ${new Date(u.last_transaction_date).toLocaleDateString('ko-KR')}` : ''}
+                      </option>
+                    ))}
                 </select>
               </div>
 

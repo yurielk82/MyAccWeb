@@ -157,11 +157,75 @@ export const authAPI = {
 
 export const usersAPI = {
   /**
-   * 사용자 목록 조회 - API 라우트를 통해 Supabase Auth에서 가져오기
+   * 사용자 목록 조회
    */
   getUsers: async () => {
     try {
       const response = await fetch('/api/users')
+      const result = await response.json()
+      return result
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  },
+
+  /**
+   * 사용자 추가
+   */
+  addUser: async (userData: {
+    email: string
+    password: string
+    name: string
+    phone?: string
+    role?: string
+    fee_rate?: number
+  }) => {
+    try {
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      })
+      const result = await response.json()
+      return result
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  },
+
+  /**
+   * 사용자 수정
+   */
+  updateUser: async (userData: {
+    id: string
+    email?: string
+    password?: string
+    name?: string
+    phone?: string
+    role?: string
+    fee_rate?: number
+  }) => {
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      })
+      const result = await response.json()
+      return result
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  },
+
+  /**
+   * 사용자 삭제
+   */
+  deleteUser: async (id: string) => {
+    try {
+      const response = await fetch(`/api/users?id=${id}`, {
+        method: 'DELETE',
+      })
       const result = await response.json()
       return result
     } catch (error: any) {

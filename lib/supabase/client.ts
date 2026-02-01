@@ -63,6 +63,8 @@ export interface User {
   fee_rate?: number
   created_at?: string
   last_sign_in_at?: string | null
+  last_transaction_date?: string | null
+  balance?: number
 }
 
 export interface Transaction {

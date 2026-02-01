@@ -84,6 +84,7 @@ export default function AddTransactionPage() {
         supplyAmount,
         vat: vat > 0 ? vat : undefined,
         feeRate: feeRate > 0 ? feeRate : undefined,
+        requestUserEmail: user?.email, // 권한 확인용
       });
 
       if (response.success) {

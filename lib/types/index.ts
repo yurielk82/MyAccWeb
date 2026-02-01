@@ -109,6 +109,7 @@ export interface AddTransactionRequest {
   supplyAmount: number;
   vat?: number;
   feeRate?: number;
+  requestUserEmail?: string; // 권한 확인용
 }
 
 // 거래 수정 요청

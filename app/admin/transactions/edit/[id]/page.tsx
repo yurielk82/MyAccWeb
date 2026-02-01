@@ -102,6 +102,7 @@ export default function EditTransactionPage() {
         supplyAmount,
         vat: formData.vat ? parseFloat(formData.vat) : undefined,
         feeRate: formData.feeRate ? parseFloat(formData.feeRate) : undefined,
+        requestUserEmail: user?.email, // 권한 확인용
       });
 
       if (response.success) {

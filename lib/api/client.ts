@@ -109,8 +109,8 @@ export const transactionsAPI = {
   },
 
   // 거래 삭제
-  deleteTransaction: async (id: string): Promise<ApiResponse> => {
-    return fetchAPI("deleteTransaction", { id }, "POST");
+  deleteTransaction: async (id: string, requestUserEmail?: string): Promise<ApiResponse> => {
+    return fetchAPI("deleteTransaction", { id, requestUserEmail }, "POST");
   },
 };
 

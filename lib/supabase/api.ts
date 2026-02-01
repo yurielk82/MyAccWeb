@@ -123,15 +123,21 @@ export const usersAPI = {
    * 사용자 목록 조회 (관리자 전용)
    */
   getUsers: async () => {
+    console.log('🔧 [API] Fetching users from Supabase...');
+    
     const { data, error } = await supabase
       .from('users')
       .select('*')
       .order('created_at', { ascending: false })
 
+    console.log('🔧 [API] Users query result:', { data, error });
+
     if (error) {
+      console.error('🔧 [API] Users query error:', error);
       return { success: false, error: error.message }
     }
 
+    console.log('🔧 [API] Users fetched:', data?.length);
     return { success: true, data }
   },
 
@@ -185,28 +191,44 @@ export const transactionsAPI = {
    * 거래 추가
    */
   addTransaction: async (transaction: Partial<Transaction>) => {
+    console.log('🔧 [API] Adding transaction to Supabase...');
+    console.log('🔧 [API] Transaction data:', transaction);
+    
     // 수수료 계산
     const supply_amount = transaction.supply_amount || 0
     const fee_rate = transaction.fee_rate || 0.2
     const fee_amount = Math.round(supply_amount * fee_rate)
     const deposit_amount = supply_amount - fee_amount
 
+    const insertData = {
+      ...transaction,
+      supply_amount,
+      fee_rate,
+      fee_amount,
+      deposit_amount,
+    };
+    
+    console.log('🔧 [API] Insert data prepared:', insertData);
+
     const { data, error } = await supabase
       .from('transactions')
-      .insert({
-        ...transaction,
-        supply_amount,
-        fee_rate,
-        fee_amount,
-        deposit_amount,
-      })
+      .insert(insertData)
       .select()
       .single()
 
+    console.log('🔧 [API] Insert result:', { data, error });
+
     if (error) {
+      console.error('🔧 [API] Insert error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       return { success: false, error: error.message }
     }
 
+    console.log('🔧 [API] Transaction added successfully');
     return { success: true, data }
   },
 

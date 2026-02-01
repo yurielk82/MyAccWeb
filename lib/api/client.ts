@@ -19,6 +19,28 @@ import type {
 const USE_PROXY = true;
 const API_URL = USE_PROXY ? "/api/gas" : process.env.NEXT_PUBLIC_GAS_API_URL || "";
 
+// localStorage에서 인증 정보 가져오기
+function getAuthHeaders(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  
+  try {
+    const authStorage = localStorage.getItem("auth-storage");
+    if (authStorage) {
+      const { state } = JSON.parse(authStorage);
+      if (state?.user) {
+        return {
+          "x-user-email": state.user.email,
+          "x-user-role": state.user.role,
+        };
+      }
+    }
+  } catch (error) {
+    console.error("Failed to get auth headers:", error);
+  }
+  
+  return {};
+}
+
 // API 호출 헬퍼 함수
 async function fetchAPI<T>(
   action: string,
@@ -27,10 +49,13 @@ async function fetchAPI<T>(
 ): Promise<ApiResponse<T>> {
   try {
     let url = `${API_URL}?action=${action}`;
+    const authHeaders = getAuthHeaders();
+    
     let options: RequestInit = {
       method,
       headers: {
         "Content-Type": "application/json",
+        ...authHeaders,
       },
     };
 

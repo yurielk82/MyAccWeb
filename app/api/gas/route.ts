@@ -94,22 +94,35 @@ export async function POST(request: NextRequest) {
   const userEmail = request.headers.get('x-user-email');
   const userRole = request.headers.get('x-user-role');
 
+  // 디버깅: 전송할 데이터 로깅
+  const requestData = {
+    ...body,
+    // 인증 정보를 body에 추가 (GAS가 헤더를 읽을 수 없으므로)
+    requestUserEmail: body.requestUserEmail || userEmail,
+    requestUserRole: userRole,
+  };
+  
+  console.log('=== GAS API POST Request ===');
+  console.log('Action:', body.action);
+  console.log('requestUserEmail:', requestData.requestUserEmail);
+  console.log('requestUserRole:', requestData.requestUserRole);
+  console.log('Body keys:', Object.keys(requestData));
+
   try {
     const response = await fetch(gasUrl!, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        ...body,
-        // 인증 정보를 body에 추가 (GAS가 헤더를 읽을 수 없으므로)
-        requestUserEmail: body.requestUserEmail || userEmail,
-        requestUserRole: userRole,
-      }),
+      body: JSON.stringify(requestData),
       redirect: 'follow',
     });
 
     let data = await response.json();
+    
+    console.log('=== GAS API Response ===');
+    console.log('Success:', data.success);
+    console.log('Error:', data.error);
     
     // snake_case를 camelCase로 변환
     data = toCamelCase(data);

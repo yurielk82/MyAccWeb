@@ -119,11 +119,12 @@ export const transactionsAPI = {
     return fetchAPI<Transaction[]>("getTransactions", { email, role }, "GET");
   },
 
-  // 거래 추가
+// 거래 추가
   addTransaction: async (
     data: AddTransactionRequest
   ): Promise<ApiResponse<Transaction>> => {
-    return fetchAPI<Transaction>("addTransaction", data, "POST");
+    // 임시: POST 대신 GET 사용 (GAS doPost 문제 우회)
+    return fetchAPI<Transaction>("addTransaction", data, "GET");
   },
 
   // 거래 수정

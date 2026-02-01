@@ -75,8 +75,16 @@ export default function AddTransactionPage() {
     setLoading(true);
 
     try {
+      // 선택된 담당자 정보 찾기
+      const selectedUser = users.find(u => u.email === formData.manager_email);
+      if (!selectedUser) {
+        alert("담당자 정보를 찾을 수 없습니다.");
+        return;
+      }
+
       const response = await transactionsAPI.addTransaction({
         date: formData.date,
+        manager_name: selectedUser.name,
         manager_email: formData.manager_email,
         type: formData.type as '세금계산서' | '입금' | '출금',
         description: formData.description,
@@ -84,6 +92,9 @@ export default function AddTransactionPage() {
         supply_amount,
         vat: vat > 0 ? vat : undefined,
         fee_rate: fee_rate > 0 ? fee_rate : undefined,
+        withdrawal: withdrawalAmount > 0 ? withdrawalAmount : undefined,
+        deposit_amount: deposit_amount > 0 ? deposit_amount : undefined,
+        total_amount: formData.type === '세금계산서' ? parseFloat(formData.total_amount) : undefined,
       });
 
       if (response.success) {
@@ -177,7 +188,7 @@ export default function AddTransactionPage() {
                   required
                 >
                   <option value="">선택해주세요</option>
-                  {users.map((u) => (
+                  {users.filter(u => u.role !== 'admin').map((u) => (
                     <option key={u.email} value={u.email}>
                       {u.name} ({u.email})
                     </option>

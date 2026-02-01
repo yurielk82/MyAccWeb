@@ -15,7 +15,8 @@ export default function UserDashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState(0);
-  const [thisMonthTotal, setThisMonthTotal] = useState(0);
+  const [thisMonthDeposit, setThisMonthDeposit] = useState(0);
+  const [thisMonthWithdrawal, setThisMonthWithdrawal] = useState(0);
 
   useEffect(() => {
     loadTransactions();
@@ -37,7 +38,7 @@ export default function UserDashboard() {
           setBalance(userTransactions[0].balance);
         }
 
-        // 이번 달 총액 계산
+        // 이번 달 입금/출금 계산
         const now = new Date();
         const thisMonth = userTransactions.filter((t) => {
           const transactionDate = new Date(t.date);
@@ -47,16 +48,22 @@ export default function UserDashboard() {
           );
         });
 
-        const monthlyTotal = thisMonth.reduce((sum, t) => {
-          if (t.type === "입금") {
-            return sum + (t.supplyAmount - (t.feeAmount || 0));
-          } else if (t.type === "출금") {
-            return sum - t.supplyAmount;
+        const deposit = thisMonth.reduce((sum, t) => {
+          if (t.type === "입금" || t.type === "세금계산서") {
+            return sum + (t.depositAmount || 0);
           }
           return sum;
         }, 0);
 
-        setThisMonthTotal(monthlyTotal);
+        const withdrawal = thisMonth.reduce((sum, t) => {
+          if (t.type === "출금") {
+            return sum + (t.withdrawal || 0);
+          }
+          return sum;
+        }, 0);
+
+        setThisMonthDeposit(deposit);
+        setThisMonthWithdrawal(withdrawal);
       }
     } catch (error) {
       console.error("Failed to load transactions:", error);
@@ -111,12 +118,13 @@ export default function UserDashboard() {
           <CardContent className="pt-6">
             <div className="space-y-2">
               <p className="text-sm text-gray-600">💰 내 잔액</p>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className={`text-3xl font-bold ${
+                balance >= 0 ? "text-gray-900" : "text-red-600"
+              }`}>
                 {formatCurrency(balance)}원
               </p>
               <p className="text-sm text-gray-600">
-                이번 달 {thisMonthTotal >= 0 ? "+" : ""}
-                {formatCurrency(thisMonthTotal)}원
+                이번 달 입금 +{formatCurrency(thisMonthDeposit)}원 / 출금 -{formatCurrency(thisMonthWithdrawal)}원
               </p>
             </div>
           </CardContent>
@@ -128,15 +136,15 @@ export default function UserDashboard() {
             <CardContent className="pt-6 text-center">
               <p className="text-sm text-gray-600">입금</p>
               <p className="text-2xl font-bold text-success">
-                {formatCurrency(thisMonthTotal)}
+                +{formatCurrency(thisMonthDeposit)}원
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6 text-center">
-              <p className="text-sm text-gray-600">수수료</p>
+              <p className="text-sm text-gray-600">출금</p>
               <p className="text-2xl font-bold text-danger">
-                -{formatCurrency(thisMonthFee)}
+                -{formatCurrency(thisMonthWithdrawal)}원
               </p>
             </CardContent>
           </Card>

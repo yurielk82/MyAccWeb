@@ -40,7 +40,6 @@ export default function AdminTransactionsPage() {
     const managerParam = searchParams.get('manager');
     if (managerParam) {
       setSelectedManager(managerParam);
-      setShowFilters(true); // 필터 영역 자동 표시
     }
   }, [searchParams]);
 

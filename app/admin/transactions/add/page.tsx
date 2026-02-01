@@ -82,21 +82,37 @@ export default function AddTransactionPage() {
         return;
       }
 
-      const transactionData = {
+      // 거래 유형별 필요한 필드만 전송
+      let transactionData: Record<string, any> = {
         date: formData.date,
         manager_name: selectedUser.name,
         manager_email: formData.manager_email,
-        type: formData.type as '세금계산서' | '입금' | '출금',
+        type: formData.type,
         description: formData.description,
-        memo: formData.memo || undefined,
-        supply_amount,
-        vat: vat > 0 ? vat : undefined,
-        fee_rate: fee_rate > 0 ? fee_rate / 100 : undefined, // 퍼센트 → 소수 변환 (20% → 0.2)
-        fee_amount: fee_amount > 0 ? fee_amount : undefined,
-        withdrawal: withdrawalAmount > 0 ? withdrawalAmount : undefined,
-        deposit_amount: deposit_amount > 0 ? deposit_amount : undefined,
-        total_amount: formData.type === '세금계산서' ? parseFloat(formData.total_amount) : undefined,
       };
+
+      // 메모가 있을 때만 추가
+      if (formData.memo && formData.memo.trim()) {
+        transactionData.memo = formData.memo.trim();
+      }
+
+      // 세금계산서: 총액, 공급가액, 부가세, 수수료율, 수수료, 입금액
+      if (formData.type === '세금계산서') {
+        transactionData.total_amount = parseFloat(formData.total_amount);
+        transactionData.supply_amount = supply_amount;
+        transactionData.vat = vat;
+        transactionData.fee_rate = fee_rate / 100; // 퍼센트 → 소수 (20% → 0.2)
+        transactionData.fee_amount = fee_amount;
+        transactionData.deposit_amount = deposit_amount;
+      }
+      // 입금: 입금액만
+      else if (formData.type === '입금') {
+        transactionData.deposit_amount = deposit_amount;
+      }
+      // 출금: 출금액만
+      else if (formData.type === '출금') {
+        transactionData.withdrawal = withdrawalAmount;
+      }
       
       const response = await transactionsAPI.addTransaction(transactionData);
 

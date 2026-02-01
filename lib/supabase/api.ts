@@ -287,11 +287,18 @@ export const transactionsAPI = {
         newBalance = lastBalance - (transaction.withdrawal || 0)
       }
 
-      // 3. 잔액 포함하여 저장
+      // 3. 날짜를 YYYY-MM-DD 형식으로 정리 (시간 제거)
+      let dateOnly = transaction.date
+      if (dateOnly && dateOnly.includes('T')) {
+        dateOnly = dateOnly.split('T')[0]
+      }
+
+      // 4. 잔액 포함하여 저장
       const { data, error } = await supabase
         .from('transactions')
         .insert({
           ...transaction,
+          date: dateOnly,
           balance: newBalance,
         })
         .select()

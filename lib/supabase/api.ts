@@ -153,45 +153,17 @@ export const authAPI = {
   },
 }
 
-// ==================== 사용자 (담당자 목록) ====================
+// ==================== 사용자 (Supabase Auth에서 가져오기) ====================
 
 export const usersAPI = {
   /**
-   * 담당자 목록 조회 - transactions에서 고유 manager 추출
-   * users 테이블 없이 거래 데이터에서 담당자 정보 추출
+   * 사용자 목록 조회 - API 라우트를 통해 Supabase Auth에서 가져오기
    */
   getUsers: async () => {
     try {
-      // transactions 테이블에서 고유한 manager_email 목록 가져오기
-      const { data: transactions, error } = await supabase
-        .from('transactions')
-        .select('manager_name, manager_email')
-      
-      if (error) {
-        console.error('Failed to fetch managers:', error)
-        return { success: false, error: error.message }
-      }
-
-      // 중복 제거하여 고유 담당자 목록 생성
-      const uniqueManagers = new Map<string, { email: string; name: string }>()
-      
-      transactions?.forEach(t => {
-        if (t.manager_email && !uniqueManagers.has(t.manager_email)) {
-          uniqueManagers.set(t.manager_email, {
-            email: t.manager_email,
-            name: t.manager_name || t.manager_email.split('@')[0],
-          })
-        }
-      })
-
-      const users = Array.from(uniqueManagers.values()).map(m => ({
-        id: m.email, // email을 id로 사용
-        email: m.email,
-        name: m.name,
-        role: 'user' as const,
-      }))
-
-      return { success: true, data: users }
+      const response = await fetch('/api/users')
+      const result = await response.json()
+      return result
     } catch (error: any) {
       return { success: false, error: error.message }
     }

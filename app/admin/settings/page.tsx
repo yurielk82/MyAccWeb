@@ -151,18 +151,31 @@ export default function AdminSettingsPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card
-              className="cursor-pointer hover:bg-gray-50"
-              onClick={() => router.push("/admin/settings/users")}
-            >
+            <Card>
               <CardContent className="p-4">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-3">
                   <div>
                     <p className="font-medium">사용자 관리</p>
                     <p className="text-sm text-gray-500">{users.length}명</p>
                   </div>
-                  <span>→</span>
                 </div>
+                {loading ? (
+                  <p className="text-sm text-gray-500">로딩 중...</p>
+                ) : (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {users.map((u) => (
+                      <div key={u.id} className="flex justify-between items-center py-2 border-b last:border-0">
+                        <div>
+                          <p className="font-medium text-sm">{u.name}</p>
+                          <p className="text-xs text-gray-500">{u.email}</p>
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded ${u.role === 'admin' ? 'bg-primary text-white' : 'bg-gray-100'}`}>
+                          {u.role === 'admin' ? '관리자' : '사용자'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
             <Card

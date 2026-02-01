@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
-import { transactionsAPI } from "@/lib/api/client";
+import { transactionsAPI, usersAPI } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDateTime, getTransactionTypeLabel, getTransactionTypeColor } from "@/lib/utils";
-import type { Transaction } from "@/lib/types";
+import type { Transaction, User } from "@/lib/types";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -26,13 +26,31 @@ export default function AdminDashboard() {
 
     setLoading(true);
     try {
-      const response = await transactionsAPI.getTransactions(user.email, "admin");
-      if (response.success && response.data) {
-        setAllTransactions(response.data); // 전체 데이터 저장
-        setTransactions(response.data.slice(0, 5)); // 최근 5개만 표시
-        if (response.data.length > 0) {
-          setTotalBalance(response.data[0].balance);
-        }
+      const [transactionsRes, usersRes] = await Promise.all([
+        transactionsAPI.getTransactions(user.email, "admin"),
+        usersAPI.getUsers(),
+      ]);
+
+      if (transactionsRes.success && transactionsRes.data && usersRes.success && usersRes.data) {
+        const allTxs = transactionsRes.data;
+        const users = usersRes.data;
+
+        setAllTransactions(allTxs); // 전체 데이터 저장
+        setTransactions(allTxs.slice(0, 5)); // 최근 5개만 표시
+
+        // 각 담당자별 최신 잔액 합계 계산
+        let totalBal = 0;
+        users.forEach((u) => {
+          const managerTxs = allTxs
+            .filter((t) => t.managerEmail === u.email)
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+          if (managerTxs.length > 0) {
+            totalBal += managerTxs[0].balance || 0;
+          }
+        });
+
+        setTotalBalance(totalBal);
       }
     } catch (error) {
       console.error("Failed to load transactions:", error);
@@ -102,7 +120,7 @@ export default function AdminDashboard() {
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-2">
-              <p className="text-sm text-gray-600">💰 현재 잔액</p>
+              <p className="text-sm text-gray-600">💰 전체 잔액 (모든 담당자)</p>
               <p className={`text-3xl font-bold ${
                 totalBalance >= 0 ? "text-gray-900" : "text-red-600"
               }`}>

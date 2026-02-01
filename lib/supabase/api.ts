@@ -199,21 +199,50 @@ export const transactionsAPI = {
 
   /**
    * 거래 추가
-   * 페이지에서 계산된 값을 그대로 사용
+   * 이전 잔액을 가져와서 새 잔액 계산
    */
   addTransaction: async (transaction: Partial<Transaction>) => {
-    const { data, error } = await supabase
-      .from('transactions')
-      .insert(transaction)
-      .select()
-      .single()
+    try {
+      // 1. 해당 담당자의 최신 거래에서 잔액 가져오기
+      const { data: lastTx } = await supabase
+        .from('transactions')
+        .select('balance')
+        .eq('manager_email', transaction.manager_email)
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
 
-    if (error) {
+      const lastBalance = lastTx?.balance || 0
+
+      // 2. 새 잔액 계산
+      let newBalance = lastBalance
+      if (transaction.type === '입금' || transaction.type === '세금계산서') {
+        newBalance = lastBalance + (transaction.deposit_amount || 0)
+      } else if (transaction.type === '출금') {
+        newBalance = lastBalance - (transaction.withdrawal || 0)
+      }
+
+      // 3. 잔액 포함하여 저장
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert({
+          ...transaction,
+          balance: newBalance,
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Transaction insert error:', error)
+        return { success: false, error: error.message }
+      }
+
+      return { success: true, data }
+    } catch (error: any) {
       console.error('Transaction insert error:', error)
       return { success: false, error: error.message }
     }
-
-    return { success: true, data }
   },
 
   /**
